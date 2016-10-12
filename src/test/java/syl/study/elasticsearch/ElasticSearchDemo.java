@@ -21,7 +21,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by Mtime on 2016/10/12.
+ * 该实例是以elasticSearch官方的java客户端TransportClient 做的演示
+ * 包括： 1.获取连接
+ *        2.添加索引
+ *        3.根据主键ID获取索引
+ *        4.根据其他字段检索索引
+ *        5.更新索引
+ *        6.删除索引
+ * Created by shiyanlei on 2016/10/12.
+ * ES Version ： 2.4.0
  */
 public class ElasticSearchDemo {
 
@@ -124,6 +132,7 @@ public class ElasticSearchDemo {
      * 删除索引
      * @throws UnknownHostException
      */
+    @Test
     public void deleteIndex() throws UnknownHostException {
         TransportClient client = getClient();
         DeleteResponse response = client.prepareDelete("customer", "custom", "1").get();
