@@ -3,18 +3,11 @@ package syl.study.elasticsearch;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptService;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import syl.study.utils.FastJsonUtil;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,30 +16,9 @@ import java.util.concurrent.ExecutionException;
 /**
  * Created by Mtime on 2016/10/13.
  */
-public class ElasticUpdateDemo {
+public class ElasticUpdateDemo extends BaseElasticSearchTest{
 
-    private TransportClient client;
 
-    /**
-     * 获取elasticSearch 连接
-     *
-     * @return
-     * @throws UnknownHostException
-     */
-    @Before
-    public void getClient() throws UnknownHostException {
-        //如果集群的名称不是elasticsearch， 就需要设置集群的名称
-        Settings settings = Settings.settingsBuilder()
-                .put("cluster.name", "shiyanlei")
-                .put("client.transport.sniff", true)
-                .build();
-        client = TransportClient.builder().settings(settings).build();
-        //设置transport addresses  是通过9300端口进行通讯的
-        client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.52.104"), 9300))
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.52.105"), 9300))
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.51.105"), 9300))
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.51.104"), 9300));
-    }
 
 
     /**
@@ -166,11 +138,4 @@ public class ElasticUpdateDemo {
 
 
 
-    /**
-     * 关闭连接
-     */
-    @After
-    public void close() {
-        client.close();
-    }
 }

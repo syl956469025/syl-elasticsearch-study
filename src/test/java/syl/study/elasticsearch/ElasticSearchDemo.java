@@ -6,15 +6,11 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.junit.Test;
 import syl.study.utils.FastJsonUtil;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,28 +26,9 @@ import java.util.Map;
  * Created by shiyanlei on 2016/10/12.
  * ES Version ： 2.4.0
  */
-public class ElasticSearchDemo {
+public class ElasticSearchDemo extends BaseElasticSearchTest {
 
-    /**
-     * 获取elasticSearch 连接
-     * @return
-     * @throws UnknownHostException
-     */
-    public TransportClient getClient() throws UnknownHostException {
-        TransportClient client = null;
-        //如果集群的名称不是elasticsearch， 就需要设置集群的名称
-        Settings settings = Settings.settingsBuilder()
-                .put("cluster.name", "shiyanlei")
-                .put("client.transport.sniff", true)
-                .build();
-        client = TransportClient.builder().settings(settings).build();
-        //设置transport addresses  是通过9300端口进行通讯的
-        client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.52.104"), 9300))
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.52.105"), 9300))
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.51.105"), 9300))
-                .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.51.104"), 9300));
-        return client;
-    }
+
 
     /**
      * 添加索引
@@ -59,7 +36,6 @@ public class ElasticSearchDemo {
      */
     @Test
     public void addIndex() throws UnknownHostException {
-        TransportClient client = getClient();
         //插入数据到elasticsearch
 //        Map<String,Object> customer = new HashMap<>();
 //        customer.put("id","1");
@@ -86,7 +62,6 @@ public class ElasticSearchDemo {
      */
     @Test
     public void getIndex() throws UnknownHostException {
-        TransportClient client = getClient();
         TermQueryBuilder query = QueryBuilders.termQuery("name", "1");
         SearchResponse response = client.prepareSearch("customer")
                 .setTypes("custom")
@@ -104,7 +79,6 @@ public class ElasticSearchDemo {
      */
     @Test
     public void getIndexById() throws UnknownHostException {
-        TransportClient client = getClient();
         GetResponse response = client.prepareGet("customer", "custom", "1").get();
 
         System.out.println(FastJsonUtil.bean2Json(response));
@@ -117,7 +91,6 @@ public class ElasticSearchDemo {
      */
     @Test
     public void updateIndex() throws UnknownHostException {
-        TransportClient client = getClient();
         Map<String,Object> customer = new HashMap<>();
         customer.put("id","2");
         customer.put("age","13");
@@ -133,7 +106,6 @@ public class ElasticSearchDemo {
      */
     @Test
     public void deleteIndex() throws UnknownHostException {
-        TransportClient client = getClient();
         DeleteResponse response = client.prepareDelete("customer", "custom", "1").get();
         System.out.println(response.toString());
         client.close();
