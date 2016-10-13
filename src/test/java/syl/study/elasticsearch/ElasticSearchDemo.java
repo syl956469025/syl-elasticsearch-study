@@ -16,7 +16,6 @@ import syl.study.utils.FastJsonUtil;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,21 +61,21 @@ public class ElasticSearchDemo {
     public void addIndex() throws UnknownHostException {
         TransportClient client = getClient();
         //插入数据到elasticsearch
-        Map<String,Object> customer = new HashMap<>();
-        customer.put("id","1");
-        customer.put("age","12");
-        customer.put("name",new String[]{"zhangsan","lisi"});
-        customer.put("birthday", LocalDateTime.now());
-        String json = FastJsonUtil.bean2Json(customer);
-        IndexResponse response = client.prepareIndex("productor", "product","1").setSource(json).get();
-        String id = response.getId();
-        System.out.println(id);
-        String index = response.getIndex();
-        System.out.println(index);
-        String type = response.getType();
-        System.out.println(type);
-        long version = response.getVersion();
-        System.out.println(version);
+//        Map<String,Object> customer = new HashMap<>();
+//        customer.put("id","1");
+//        customer.put("age","12");
+//        customer.put("name",new String[]{"zhangsan","lisi"});
+//        customer.put("birthday", LocalDateTime.now());
+//        String json = FastJsonUtil.bean2Json(customer);
+//        IndexResponse response = client.prepareIndex("productor", "product","1").setSource(json).get();
+        Map<String,Object> twitter = new HashMap<>();
+        twitter.put("user","kimchy");
+        twitter.put("post_date","2009-11-15T14:12:12");
+        twitter.put("message","trying out Elasticsearch");
+        String json = FastJsonUtil.bean2Json(twitter);
+//        IndexResponse response = client.prepareIndex("twitters", "twit","1").setSource(json).get();
+        IndexResponse response = client.prepareIndex("twitter", "twit","2").setSource(twitter).get();
+        System.out.println(FastJsonUtil.bean2Json(response));
         client.close();
     }
 
@@ -138,5 +137,11 @@ public class ElasticSearchDemo {
         DeleteResponse response = client.prepareDelete("customer", "custom", "1").get();
         System.out.println(response.toString());
         client.close();
+    }
+
+
+    public static void main(String[] args) {
+        String s = String.format("%016d", 24242342l);
+        System.out.println(s);
     }
 }
