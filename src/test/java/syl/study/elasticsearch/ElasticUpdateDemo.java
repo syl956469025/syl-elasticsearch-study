@@ -74,10 +74,14 @@ public class ElasticUpdateDemo extends BaseElasticSearchTest{
     @Test
     public void addNewFieldByScript() throws ExecutionException, InterruptedException {
         UpdateRequest request = new UpdateRequest();
-        request.index("productor").type("product").id("1");
+        request.index("productor").type("product").id("4");
         Map<String,Object> param = new HashMap<>();
-        param.put("prefers",new String[]{"swim","eat","run","sing"});
-        request.script(new Script("ctx._source.prefer=prefers", ScriptService.ScriptType.INLINE,"groovy",param));
+//        param.put("prefers",new String[]{"swim","eat","run","sing"});
+//        request.script(new Script("ctx._source.prefer=prefers", ScriptService.ScriptType.INLINE,"groovy",param));
+        param.put("username","张无忌4");
+        param.put("nickname","张无忌4");
+//        request.script(new Script("ctx._source.username=username", ScriptService.ScriptType.INLINE,"groovy",param));
+        request.script(new Script("ctx._source.nickname=nickname", ScriptService.ScriptType.INLINE,"groovy",param));
         UpdateResponse response = client.update(request).get();
         System.out.println(FastJsonUtil.bean2Json(response));
     }

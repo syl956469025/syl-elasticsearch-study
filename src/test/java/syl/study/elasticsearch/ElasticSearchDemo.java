@@ -1,119 +1,148 @@
 package syl.study.elasticsearch;
 
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermQueryBuilder;
 import org.junit.Test;
 import syl.study.utils.FastJsonUtil;
 
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * 该实例是以elasticSearch官方的java客户端TransportClient 做的演示
- * 包括： 1.获取连接
- *        2.添加索引
- *        3.根据主键ID获取索引
- *        4.根据其他字段检索索引
- *        5.更新索引
- *        6.删除索引
- * Created by shiyanlei on 2016/10/12.
- * ES Version ： 2.4.0
+ * Created by Mtime on 2016/10/13.
  */
 public class ElasticSearchDemo extends BaseElasticSearchTest {
 
 
 
-    /**
-     * 添加索引
-     * @throws UnknownHostException
-     */
     @Test
-    public void addIndex() throws UnknownHostException {
-        //插入数据到elasticsearch
-//        Map<String,Object> customer = new HashMap<>();
-//        customer.put("id","1");
-//        customer.put("age","12");
-//        customer.put("name",new String[]{"zhangsan","lisi"});
-//        customer.put("birthday", LocalDateTime.now());
-//        String json = FastJsonUtil.bean2Json(customer);
-//        IndexResponse response = client.prepareIndex("productor", "product","1").setSource(json).get();
-        Map<String,Object> twitter = new HashMap<>();
-        twitter.put("user","kimchy");
-        twitter.put("post_date","2009-11-15T14:12:12");
-        twitter.put("message","trying out Elasticsearch");
-        String json = FastJsonUtil.bean2Json(twitter);
-//        IndexResponse response = client.prepareIndex("twitters", "twit","1").setSource(json).get();
-        IndexResponse response = client.prepareIndex("twitter", "twit","2").setSource(twitter).get();
-        System.out.println(FastJsonUtil.bean2Json(response));
-        client.close();
-    }
-
-
-    /**
-     * 根据其他字段检索索引
-     * @throws UnknownHostException
-     */
-    @Test
-    public void getIndex() throws UnknownHostException {
-        TermQueryBuilder query = QueryBuilders.termQuery("name", "1");
-        SearchResponse response = client.prepareSearch("customer")
-                .setTypes("custom")
+    public void searchTest(){
+        SearchResponse response = client.prepareSearch("complex")
+                .setTypes("child")
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(query)
+//                .setPostFilter(termQuery())
+                .setQuery(booleanQuery())
+                .setFrom(0)
+                .setSize(10)
                 .execute().actionGet();
-        System.out.println(response.toString());
-        client.close();
-
+        writeSearchResponse(response);
     }
 
-    /**
-     * 根据主键ID获取索引
-     * @throws UnknownHostException
-     */
-    @Test
-    public void getIndexById() throws UnknownHostException {
-        GetResponse response = client.prepareGet("customer", "custom", "1").get();
 
+    @Test
+    public void searchNestedTest(){
+        SearchResponse response = client.prepareSearch("complex")
+                .setTypes("child")
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(nestedQuery())
+                .setFrom(0)
+                .setSize(10)
+                .execute().actionGet();
         System.out.println(FastJsonUtil.bean2Json(response));
-        client.close();
+        writeSearchResponse(response);
     }
 
     /**
-     * 更新索引
-     * @throws UnknownHostException
+     * matchQuery 单个匹配 模糊匹配
+     * @return
      */
-    @Test
-    public void updateIndex() throws UnknownHostException {
-        Map<String,Object> customer = new HashMap<>();
-        customer.put("id","2");
-        customer.put("age","13");
-        customer.put("name",null);
-        UpdateResponse response = client.prepareUpdate("customer", "custom", "1").setDoc(customer).get();
-        System.out.println(FastJsonUtil.bean2Json(response));
-        client.close();
+    public QueryBuilder matchQuery(){
+        return QueryBuilders.matchQuery("name","张无忌");
     }
 
     /**
-     * 删除索引
-     * @throws UnknownHostException
+     * 匹配多个字段  模糊匹配
+     * @return
      */
-    @Test
-    public void deleteIndex() throws UnknownHostException {
-        DeleteResponse response = client.prepareDelete("customer", "custom", "1").get();
-        System.out.println(response.toString());
-        client.close();
+    public QueryBuilder multiMatchQuery(){
+        return QueryBuilders.multiMatchQuery("张无忌","username","nickname");
     }
 
 
-    public static void main(String[] args) {
-        String s = String.format("%016d", 24242342l);
-        System.out.println(s);
+    public QueryBuilder booleanQuery(){
+        return QueryBuilders.boolQuery()
+                .should(QueryBuilders.termQuery("username","张无忌"));
     }
+
+
+    public QueryBuilder termQuery(){
+        return QueryBuilders.termQuery("username","张无忌");
+    }
+
+
+    public QueryBuilder fuzzyQuery() {
+        return QueryBuilders.fuzzyQuery("username", "张无忌");
+    }
+
+
+    /**
+     * matchall query
+     * 查询匹配所有文件。
+     *
+     * @return QueryBuilder
+     */
+    public QueryBuilder matchAllQuery() {
+        return QueryBuilders.matchAllQuery();
+    }
+
+
+    /**
+     * prefix query
+     * 包含与查询相匹配的文档指定的前缀。
+     *
+     * @return QueryBuilder
+     */
+    public QueryBuilder prefixQuery() {
+        return QueryBuilders.prefixQuery("nickname", "张无");
+    }
+
+
+    /**
+     * TODO NotSolved
+     * p
+     * querystring query
+     * 　　查询解析查询字符串,并运行它。有两种模式,这种经营。
+     * 第一,当没有添加字段(使用{ @link QueryStringQueryBuilder #字段(String)},将运行查询一次,非字段前缀
+     * 　　将使用{ @link QueryStringQueryBuilder # defaultField(字符串)}。
+     * 第二,当一个或多个字段
+     * 　　(使用{ @link QueryStringQueryBuilder #字段(字符串)}),将运行提供的解析查询字段,并结合
+     * 　　他们使用DisMax或者一个普通的布尔查询(参见{ @link QueryStringQueryBuilder # useDisMax(布尔)})。
+     *
+     * @return QueryBuilder
+     */
+    public QueryBuilder queryString() {
+        return QueryBuilders.queryStringQuery("+kimchy -elasticsearch");
+    }
+
+    /**
+     * wildcard query
+     * 　　实现了通配符搜索查询。支持通配符*
+     * 　　匹配任何字符序列(包括空), ? ,
+     * 　　匹配任何单个的字符。注意该查询可以缓慢,因为它
+     * 　　许多方面需要遍历。为了防止WildcardQueries极其缓慢。
+     * 　　一个通配符词不应该从一个通配符*或?。
+     *
+     * @return QueryBuilder
+     */
+    public QueryBuilder wildcardQuery() {
+        return QueryBuilders.wildcardQuery("name", "zhang*");
+    }
+
+    /**
+     * nestedQuery
+     *
+     * 用于对象嵌套查询，
+     *
+     * @return
+     */
+    public QueryBuilder nestedQuery(){
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
+                .must(QueryBuilders.matchQuery("member.name", "张无忌"))
+                .must(QueryBuilders.matchQuery("member.age", 12));
+
+
+        return QueryBuilders.nestedQuery("member",boolQuery);
+    }
+
+
 }
