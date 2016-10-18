@@ -141,6 +141,7 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
                 .must(QueryBuilders.matchQuery("member.age", 12));
 
 
+
         return QueryBuilders.nestedQuery("member",boolQuery);
     }
 

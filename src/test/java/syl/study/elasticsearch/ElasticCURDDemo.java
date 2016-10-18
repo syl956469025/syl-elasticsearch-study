@@ -9,6 +9,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.junit.Test;
+import syl.study.elasticsearch.model.Member;
 import syl.study.utils.FastJsonUtil;
 
 import java.net.UnknownHostException;
@@ -42,16 +43,20 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
 //        customer.put("age","12");
 //        customer.put("name",new String[]{"zhangsan","lisi"});
 //        customer.put("birthday", LocalDateTime.now());
-//        String json = FastJsonUtil.bean2Json(customer);
-//        IndexResponse response = client.prepareIndex("productor", "product","1").setSource(json).get();
-        Map<String,Object> twitter = new HashMap<>();
-        twitter.put("user","kimchy");
-        twitter.put("post_date","2009-11-15T14:12:12");
-        twitter.put("message","trying out Elasticsearch");
-        String json = FastJsonUtil.bean2Json(twitter);
-//        IndexResponse response = client.prepareIndex("twitters", "twit","1").setSource(json).get();
-        IndexResponse response = client.prepareIndex("twitter", "twit","2").setSource(twitter).get();
-        System.out.println(FastJsonUtil.bean2Json(response));
+////        String json = FastJsonUtil.bean2Json(customer);
+//        IndexResponse response = client.prepareIndex("productor", "product","1").setSource(customer).get();
+//        Map<String,Object> twitter = new HashMap<>();
+//        twitter.put("user","kimchy");
+//        twitter.put("post_date","2009-11-15T14:12:12");
+//        twitter.put("message","trying out Elasticsearch");
+//        String json = FastJsonUtil.bean2Json(twitter);
+////        IndexResponse response = client.prepareIndex("twitters", "twit","1").setSource(json).get();
+//        IndexResponse response = client.prepareIndex("twitter", "twit","2").setSource(twitter).get();
+//        System.out.println(FastJsonUtil.bean2Json(response));
+        Member member = new Member();
+        member.setAge(12);
+        member.setName("张无忌");
+        IndexResponse response = client.prepareIndex("member", "mem", "1").setSource(member).get();
         client.close();
     }
 
