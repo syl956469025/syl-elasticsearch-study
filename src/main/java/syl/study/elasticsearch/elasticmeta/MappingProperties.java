@@ -20,6 +20,20 @@ public class MappingProperties {
      */
     Map<String,Object> properties;
 
+    /**
+     * 是否动态映射字段类型
+     */
+    String dynamic ="strict";
+
+
+    public String getDynamic() {
+        return dynamic;
+    }
+
+    public void setDynamic(String dynamic) {
+        this.dynamic = dynamic;
+    }
+
     public MappingProperties(Map<String, Object> properties) {
         this.properties = properties;
     }

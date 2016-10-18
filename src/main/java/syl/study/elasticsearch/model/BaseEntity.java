@@ -16,6 +16,8 @@ public class BaseEntity<PK> {
     PK id;
 
 
+
+
     public PK getId() {
         return id;
     }

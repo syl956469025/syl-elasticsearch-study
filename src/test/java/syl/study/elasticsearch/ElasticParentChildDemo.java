@@ -25,11 +25,11 @@ public class ElasticParentChildDemo extends BaseElasticSearchTest {
         List<Member> memberList = new ArrayList<>();
         for(int i=0;i<5;i++){
             Member member = new Member();
-            member.setAge(21+i);
+//            member.setAge(21+i);
             member.setBirthday(LocalDateTime.now());
             member.setName("张无忌"+i);
             member.setUserId(123456+i);
-            member.setPrefer(new String[]{"swim","eat","run"});
+//            member.setPrefer(new String[]{"swim","eat","run"});
             memberList.add(member);
         }
         map.put("memberlist",memberList);

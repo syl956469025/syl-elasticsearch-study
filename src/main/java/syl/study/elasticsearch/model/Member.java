@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 /**
  * Created by Mtime on 2016/10/12.
  */
-public class Member {
+public class Member extends BaseEntity<Integer> {
 
 
     private long userId;
@@ -16,7 +16,19 @@ public class Member {
 
     private LocalDateTime birthday;
 
-    private String[] prefer;
+    private Double price;
+
+//    private float pric;
+
+//    public float getPric() {
+//        return pric;
+//    }
+
+//    public void setPric(float pric) {
+//        this.pric = pric;
+//    }
+
+    //    private String[] prefer;
 
 
     public long getUserId() {
@@ -51,11 +63,19 @@ public class Member {
         this.birthday = birthday;
     }
 
-    public String[] getPrefer() {
-        return prefer;
+    public Double getPrice() {
+        return price;
     }
 
-    public void setPrefer(String[] prefer) {
-        this.prefer = prefer;
+    public void setPrice(Double price) {
+        this.price = price;
     }
+
+//    public String[] getPrefer() {
+//        return prefer;
+//    }
+//
+//    public void setPrefer(String[] prefer) {
+//        this.prefer = prefer;
+//    }
 }

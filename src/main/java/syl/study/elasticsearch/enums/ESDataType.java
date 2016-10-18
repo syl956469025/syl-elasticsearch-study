@@ -8,22 +8,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public enum ESDataType {
 
-    STRING("String","string"),
-    INTEGER("Integer","integer"),
+    STRING("java.lang.String","string"),
+    INTEGER("java.lang.Integer","integer"),
     INT("int","integer"),
-    SHORT("Short","short"),
+    SHORT("java.lang.Short","short"),
     SSHORT("short","short"),
-    BOOLEAN("Boolean","boolean"),
+    BOOLEAN("java.lang.Boolean","boolean"),
     SBOOLEAN("boolean","boolean"),
-    DOUBLE("Double","double"),
+    DOUBLE("java.lang.Double","double"),
     SDOUBLE("double","double"),
-    FLOAT("Float","float"),
+    FLOAT("java.lang.Float","float"),
     SFLOAT("float","float"),
-    LOCALDATE("LocalDate","date"),
-    LOCALDATETIME("LocalDateTime","date"),
+    LOCALDATE("java.time.LocalDate","date"),
+    LOCALDATETIME("java.time.LocalDateTime","date"),
     SLONG("long","long"),
-    LONG("Long","long"),
-    OBJECT("Object","object"),
+    LONG("java.lang.Long","long"),
+    OBJECT("java.lang.Object","object"),
     NESTED("Nested","nested");
 
     private String javaType;

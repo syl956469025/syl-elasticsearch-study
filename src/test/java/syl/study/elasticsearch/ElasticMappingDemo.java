@@ -19,10 +19,9 @@ public class ElasticMappingDemo extends BaseElasticSearchTest {
         System.out.println(map);
         client.admin().indices().prepareCreate(info.getIndex().getIndexName())
                 .addMapping(info.getIndex().getIndexType(), map).get();
-
-
-
     }
+
+
 
 
 

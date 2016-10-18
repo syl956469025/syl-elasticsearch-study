@@ -6,13 +6,15 @@ import syl.study.elasticsearch.annotation.ESColumn;
 import syl.study.elasticsearch.annotation.ESIndex;
 import syl.study.elasticsearch.annotation.ESType;
 import syl.study.elasticsearch.elasticmeta.ElasticIndex;
+import syl.study.elasticsearch.elasticmeta.FieldProperties;
+import syl.study.elasticsearch.elasticmeta.MappingProperties;
 import syl.study.elasticsearch.enums.Analyzed;
 import syl.study.elasticsearch.enums.ESDataType;
 import syl.study.elasticsearch.enums.Store;
-import syl.study.elasticsearch.elasticmeta.FieldProperties;
-import syl.study.elasticsearch.elasticmeta.MappingProperties;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,30 +25,31 @@ public final class Mapper {
 
 
     public static EntityInfo getEntityInfo(Class<?> clazz) {
-        Map<String, Object> properties = getProperties(clazz);
+        Map<String, Object> properties = getProperties(clazz,null,null);
         Alias alias = getAlias(clazz);
         ElasticIndex index = getIndex(clazz);
         EntityInfo info = new EntityInfo(clazz,properties,alias,index);
         return info;
     }
 
-    private static Map<String,Object> getProperties(Class<?> clazz){
+    private static Map<String,Object> getProperties(Class<?> clazz,Class<?> subClazz,Map<String, Object> prop){
         Field[] fields = clazz.getDeclaredFields();
-        Map<String,Object> prop = new HashMap<>();
+        if (prop == null){
+            prop = new HashMap<>();
+        }
         for (Field f : fields) {
             FieldProperties fprop = new FieldProperties();
-            String javaType = f.getType().getSimpleName();
-            fprop.setType(ESDataType.getEsType(javaType));
             ESColumn column = f.getAnnotation(ESColumn.class);
             if (column != null) {
                 if (column.subClass()){
                     Map<String,Object> obj = new HashMap<>();
-                    Map<String, Object> subProp = getProperties(column.clazz());
+                    Map<String, Object> subProp = getProperties(column.clazz(),null,null);
                     obj.put("type", ESDataType.NESTED.getEsType());
                     obj.put("properties",subProp);
                     prop.put(f.getName(),obj);
                     continue;
                 }
+
                 if (column.store().equals(Store.NOT_STORE)) {
                     fprop.setStore(false);
                 }
@@ -57,7 +60,19 @@ public final class Mapper {
                 fprop.setStore(true);
                 fprop.setIndex(Analyzed.NOT_ANALYZED.getName());
             }
+            String javaType = f.getType().getTypeName();
+            if(f.getType().equals(Object.class)){
+                Type type = subClazz.getGenericSuperclass();
+                if (type instanceof ParameterizedType){
+                    Type trueType = ((ParameterizedType)type).getActualTypeArguments()[0];
+                    javaType = trueType.getTypeName();
+                }
+            }
+            fprop.setType(ESDataType.getEsType(javaType));
             prop.put(f.getName(),fprop);
+        }
+        if (clazz.getSuperclass() != Object.class) {
+            return getProperties(clazz.getSuperclass(),clazz,prop);
         }
         return prop;
     }
@@ -81,16 +96,16 @@ public final class Mapper {
         //获取索引名
         ESIndex indexName = clazz.getAnnotation(ESIndex.class);
         if (indexName == null || StrKit.isBlank(indexName.value())){
-            index.setIndexName(clazz.getSimpleName());
+            index.setIndexName(clazz.getSimpleName().toLowerCase());
         }else{
-            index.setIndexName(indexName.value());
+            index.setIndexName(indexName.value().toLowerCase());
         }
         //获取索引type
         ESType type = clazz.getAnnotation(ESType.class);
         if (type == null || StrKit.isBlank(type.value())){
             index.setIndexType(index.getIndexName());
         }else {
-            index.setIndexType(type.value());
+            index.setIndexType(type.value().toLowerCase());
         }
         return index;
     }
