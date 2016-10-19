@@ -3,26 +3,32 @@ package syl.study.elasticsearch.client;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.mapper.StrictDynamicMappingException;
 import syl.study.elasticsearch.Util.Mapper;
+import syl.study.elasticsearch.Util.StrKit;
 import syl.study.elasticsearch.elasticmeta.ElasticIndex;
 import syl.study.elasticsearch.model.BaseEntity;
 import syl.study.utils.FastJsonUtil;
 
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Mtime on 2016/10/17.
  */
-public class ESUtil implements AutoCloseable  {
+public class ESWriteUtil {
 
 
 
@@ -76,39 +82,47 @@ public class ESUtil implements AutoCloseable  {
         }
     }
 
-    public static <T extends BaseEntity> void deleteIndex(T t)throws UnknownHostException{
-        if (t == null || t.getId()== null){
+    /**
+     * 删除单个索引
+     * @param clazz
+     * @param id
+     * @param <T>
+     * @throws UnknownHostException
+     */
+    public static <T extends BaseEntity> void deleteIndex(Class<T> clazz ,String id)throws UnknownHostException{
+        if (clazz == null || StrKit.isBlank(id)){
             throw new RuntimeException("删除的索引对象不可以为空");
         }
-        Mapper.EntityInfo info = Mapper.getEntityInfo(t.getClass());
+        Mapper.EntityInfo info = Mapper.getEntityInfo(clazz);
         client = TClient.getClient();
         ElasticIndex index = info.getIndex();
         client.prepareDelete(index.getIndexName(),
                             index.getIndexType(),
-                            String.valueOf(t.getId())).get();
+                            id).get();
     }
 
     /**
      * 批量删除索引
-     * @param tlist
      * @param <T>
      * @throws UnknownHostException
      */
-    public static <T extends BaseEntity> void deleteIndexList(List<T> tlist)throws UnknownHostException{
-        if (tlist.isEmpty()){
+    public static <T extends BaseEntity> void deleteIndexList(Class<T> clazz,List<String> ids)throws UnknownHostException{
+        if (clazz == null || ids.isEmpty()){
             throw new RuntimeException("批量删除索引的列表不可以为空");
         }
-        Mapper.EntityInfo info = Mapper.getEntityInfo(tlist.get(0).getClass());
+        Mapper.EntityInfo info = Mapper.getEntityInfo(clazz);
         client = TClient.getClient();
         BulkRequestBuilder builder = client.prepareBulk();
         ElasticIndex index =info.getIndex();
-        tlist.forEach(obj ->{
+        ids.forEach(id ->{
             DeleteRequestBuilder indexBuilder = client.prepareDelete(index.getIndexName(),
                     index.getIndexType(),
-                    String.valueOf(obj.getId()));
+                    id);
             builder.add(indexBuilder);
         });
-        BulkResponse response = builder.get();
+        BulkResponse response = builder.setRefresh(true).get();
+        System.out.println(FastJsonUtil.bean2Json(response));
+        processException(response);
     }
 
 
@@ -118,7 +132,7 @@ public class ESUtil implements AutoCloseable  {
      * @param <T>
      * @throws UnknownHostException
      */
-    public static <T extends BaseEntity> void addIndexList(List<T> tlist) throws UnknownHostException{
+    public static <T extends BaseEntity> void addIndexList(List<T> tlist) throws UnknownHostException, ExecutionException, InterruptedException {
         if (tlist.isEmpty()){
             throw new RuntimeException("批量添加索引的列表不可以为空");
         }
@@ -174,10 +188,15 @@ public class ESUtil implements AutoCloseable  {
      * @throws IndexNotFoundException
      */
     private static <T extends BaseEntity> BulkResponse addList(List<T> tlist, Mapper.EntityInfo info)
-                                                            throws UnknownHostException ,IndexNotFoundException{
+            throws UnknownHostException, IndexNotFoundException,ExecutionException, InterruptedException  {
         client = TClient.getClient();
-        BulkRequestBuilder builder = client.prepareBulk();
         ElasticIndex index = info.getIndex();
+//        IndicesExistsRequest req = new IndicesExistsRequest(index.getIndexName());
+//        IndicesExistsResponse resp = client.admin().indices().exists(req).get();
+//        if (!resp.isExists()){
+//            throw new IndexNotFoundException("索引不存在");
+//        }
+        BulkRequestBuilder builder = client.prepareBulk();
         tlist.forEach(obj ->{
             IndexRequestBuilder indexBuilder = client.prepareIndex(index.getIndexName(),
                     index.getIndexType(),
@@ -186,6 +205,7 @@ public class ESUtil implements AutoCloseable  {
             builder.add(indexBuilder);
         });
         BulkResponse response = builder.get();
+        processException(response);
         return response;
     }
 
@@ -211,6 +231,7 @@ public class ESUtil implements AutoCloseable  {
             builder.add(updateBuilder);
         });
         BulkResponse response = builder.get();
+        processException(response);
         return response;
     }
 
@@ -236,6 +257,7 @@ public class ESUtil implements AutoCloseable  {
 
     /**
      * 更新索引
+     * 如果发现没有该索引则新建
      * @param t
      * @param info
      * @param <T>
@@ -246,8 +268,17 @@ public class ESUtil implements AutoCloseable  {
                                         throws UnknownHostException ,IndexNotFoundException{
         client = TClient.getClient();
         ElasticIndex index = info.getIndex();
-            client.prepareUpdate(index.getIndexName(), index.getIndexType(), String.valueOf(t.getId()))
-                    .setDoc(FastJsonUtil.bean2Json(t)).get();
+        String source = FastJsonUtil.bean2Json(t);
+        IndexRequest indexRequest = new IndexRequest(index.getIndexName(),
+                index.getIndexType(),
+                String.valueOf(t.getId()))
+                .source(source);
+        UpdateRequest updateRequest = new UpdateRequest(index.getIndexName(),
+                index.getIndexType(),
+                String.valueOf(t.getId()))
+                .doc(source)
+                .upsert(indexRequest);
+        UpdateResponse response = client.update(updateRequest).actionGet();
     }
 
     /**
@@ -271,7 +302,7 @@ public class ESUtil implements AutoCloseable  {
      * @param info
      * @throws UnknownHostException
      */
-    private static void addFieldMapping(Mapper.EntityInfo info)throws UnknownHostException {
+    private static void addFieldMapping(Mapper.EntityInfo info) throws UnknownHostException {
         client = TClient.getClient();
         ElasticIndex index = info.getIndex();
         PutMappingRequest req = new PutMappingRequest(index.getIndexName());
@@ -279,14 +310,26 @@ public class ESUtil implements AutoCloseable  {
         String mapping = FastJsonUtil.bean2Json(info.getMappings());
         System.out.println(mapping);
         req.source(mapping);
-        PutMappingResponse response = client.admin().indices().putMapping(req).actionGet();
+        PutMappingResponse putMappingResponse = client.admin().indices().putMapping(req).actionGet();
     }
 
-
-
-
-    @Override
-    public void close() throws Exception {
-        if (client !=null) client.close();
+    /**
+     * 处理异常
+     * @param response
+     */
+    private static void processException(BulkResponse response){
+        if(response.hasFailures()){
+            for(BulkItemResponse res : response){
+                String failureMessage = res.getFailureMessage();
+                if (failureMessage.indexOf("IndexNotFoundException") != -1){
+                    throw new IndexNotFoundException("不存在该索引");
+                }else if (failureMessage.indexOf("StrictDynamicMappingException") != -1){
+                    throw new StrictDynamicMappingException("","");
+                }else {
+                    throw new RuntimeException(res.getFailure().getCause());
+                }
+            }
+        }
     }
+
 }

@@ -10,7 +10,7 @@ import java.net.UnknownHostException;
 /**
  * Created by Mtime on 2016/10/13.
  */
-public class TClient {
+public class TClient{
 
 
     private static TransportClient client;
@@ -48,10 +48,4 @@ public class TClient {
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.51.105"), 9300))
                 .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName("192.168.51.104"), 9300));
     }
-
-
-
-
-
-
 }

@@ -1,6 +1,10 @@
 package syl.study.elasticsearch.model;
 
+import syl.study.elasticsearch.annotation.ESColumn;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Created by Mtime on 2016/10/12.
@@ -18,17 +22,49 @@ public class Member extends BaseEntity<Integer> {
 
     private Double price;
 
-//    private float pric;
+    private float pric;
 
-//    public float getPric() {
-//        return pric;
-//    }
+    private LocalDate bir;
 
-//    public void setPric(float pric) {
-//        this.pric = pric;
-//    }
+    @ESColumn(subClass = true,clazz=Points.class)
+    List<Points> points;
 
-    //    private String[] prefer;
+    @ESColumn(subClass = true,clazz=ArrTest.class)
+    ArrTest arr;
+
+    public ArrTest getArr() {
+        return arr;
+    }
+
+    public void setArr(ArrTest arr) {
+        this.arr = arr;
+    }
+
+    public List<Points> getPoints() {
+        return points;
+    }
+
+    public void setPoints(List<Points> points) {
+        this.points = points;
+    }
+
+    public LocalDate getBir() {
+        return bir;
+    }
+
+    public void setBir(LocalDate bir) {
+        this.bir = bir;
+    }
+
+    public float getPric() {
+        return pric;
+    }
+
+    public void setPric(float pric) {
+        this.pric = pric;
+    }
+
+        private String[] prefer;
 
 
     public long getUserId() {
@@ -71,11 +107,11 @@ public class Member extends BaseEntity<Integer> {
         this.price = price;
     }
 
-//    public String[] getPrefer() {
-//        return prefer;
-//    }
-//
-//    public void setPrefer(String[] prefer) {
-//        this.prefer = prefer;
-//    }
+    public String[] getPrefer() {
+        return prefer;
+    }
+
+    public void setPrefer(String[] prefer) {
+        this.prefer = prefer;
+    }
 }

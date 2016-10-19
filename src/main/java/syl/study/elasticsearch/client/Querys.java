@@ -1,63 +1,13 @@
-package syl.study.elasticsearch;
+package syl.study.elasticsearch.client;
 
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.junit.Test;
-import syl.study.utils.FastJsonUtil;
 
 /**
- * Created by Mtime on 2016/10/13.
+ * Created by Mtime on 2016/10/19.
  */
-public class ElasticSearchDemo extends BaseElasticSearchTest {
-
-
-
-    @Test
-    public void searchTest(){
-        SearchResponse response = client.prepareSearch("complex")
-                .setTypes("child")
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-//                .setPostFilter(termQuery())
-                .setQuery(booleanQuery())
-                .setFrom(0)
-                .setSize(10)
-                .execute().actionGet();
-        writeSearchResponse(response);
-    }
-
-
-    @Test
-    public void searchNestedTest(){
-        SearchResponse response = client.prepareSearch("member")
-                .setTypes("member")
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(queryString())
-                .setFrom(0)
-                .setSize(10)
-                .get();
-        System.out.println(FastJsonUtil.bean2Json(response));
-        writeSearchResponse(response);
-    }
-
-    /**
-     * matchQuery 单个匹配 模糊匹配
-     * @return
-     */
-    public QueryBuilder matchQuery(){
-        return QueryBuilders.matchQuery("name","张无忌");
-    }
-
-    /**
-     * 匹配多个字段  模糊匹配
-     * @return
-     */
-    public QueryBuilder multiMatchQuery(){
-        return QueryBuilders.multiMatchQuery("张无忌","username","nickname");
-    }
-
+public class Querys {
 
     public QueryBuilder booleanQuery(){
         return QueryBuilders.boolQuery()
@@ -111,7 +61,7 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
      * @return QueryBuilder
      */
     public QueryBuilder queryString() {
-        return QueryBuilders.queryStringQuery("name:张无忌9 OR name:张无忌6");
+        return QueryBuilders.queryStringQuery("name:张无忌");
     }
 
     /**
@@ -145,8 +95,6 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
         return QueryBuilders.nestedQuery("member",boolQuery);
     }
 
-    public QueryBuilder rangeQuery(){
-        return QueryBuilders.rangeQuery("price").from(2.3).to(8.3);
-    }
+
 
 }

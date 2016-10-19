@@ -61,6 +61,7 @@ public final class Mapper {
                 fprop.setIndex(Analyzed.NOT_ANALYZED.getName());
             }
             String javaType = f.getType().getTypeName();
+            //判断是不是泛型类
             if(f.getType().equals(Object.class)){
                 Type type = subClazz.getGenericSuperclass();
                 if (type instanceof ParameterizedType){
@@ -68,9 +69,15 @@ public final class Mapper {
                     javaType = trueType.getTypeName();
                 }
             }
+            //判断是不是数组
+            Class<?> componentType = f.getType().getComponentType();
+            if (componentType != null){
+                javaType =componentType.getTypeName();
+            }
             fprop.setType(ESDataType.getEsType(javaType));
             prop.put(f.getName(),fprop);
         }
+        //判断有没有父类
         if (clazz.getSuperclass() != Object.class) {
             return getProperties(clazz.getSuperclass(),clazz,prop);
         }
