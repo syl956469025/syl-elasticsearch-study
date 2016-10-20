@@ -70,6 +70,14 @@ public class BaseElasticSearchTest {
         //stringSet.forEach(System.out::println);
     }
 
+    /**
+     * 输出json
+     * @param obj
+     */
+    public static void json(Object obj){
+        System.out.println(FastJsonUtil.bean2Json(obj));
+    }
+
 
 
     @After

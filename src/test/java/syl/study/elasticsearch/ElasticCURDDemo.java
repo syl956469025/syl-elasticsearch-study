@@ -11,6 +11,7 @@ import syl.study.elasticsearch.client.ESSearchUtil;
 import syl.study.elasticsearch.client.ESWriteUtil;
 import syl.study.elasticsearch.model.ArrTest;
 import syl.study.elasticsearch.model.Member;
+import syl.study.elasticsearch.model.MemberCore;
 import syl.study.elasticsearch.model.Points;
 import syl.study.utils.FastJsonUtil;
 
@@ -201,6 +202,14 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
 //        String filter = "price:[ 2.3 TO 8.3 ]";
         SearchResponse query = ESSearchUtil.query(Member.class, properties, sort, null,nest,null, 1, 10);
         writeSearchResponse(query);
+    }
+
+
+    @Test
+    public void addMember() throws UnknownHostException {
+        MemberCore member = new MemberCore();
+        member.setId(123456l);
+        ESWriteUtil.addIndex(member);
     }
 
 

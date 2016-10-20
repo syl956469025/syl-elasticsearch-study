@@ -88,7 +88,14 @@ public class ElasticBulkDemo extends BaseElasticSearchTest{
                 System.out.println(errmsg);
             });
         }
+    }
 
+
+    @Test
+    public void testImportJsonFile(){
+        BulkRequestBuilder builder = client.prepareBulk();
+        IndexRequestBuilder indexBuilder2 = client.prepareIndex("chongqingtest", "dlzxx_1");
 
     }
+
 }

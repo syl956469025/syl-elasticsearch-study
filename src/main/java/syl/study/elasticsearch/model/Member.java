@@ -14,6 +14,7 @@ public class Member extends BaseEntity<Integer> {
 
     private long userId;
 
+
     private String name;
 
     private int age;
