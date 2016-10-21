@@ -1,7 +1,5 @@
 package syl.study.elasticsearch.model;
 
-import syl.study.elasticsearch.annotation.ESColumn;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,7 +11,6 @@ public class Member extends BaseEntity<Integer> {
 
 
     private long userId;
-
 
     private String name;
 
@@ -27,10 +24,10 @@ public class Member extends BaseEntity<Integer> {
 
     private LocalDate bir;
 
-    @ESColumn(subClass = true,clazz=Points.class)
     List<Points> points;
 
-    @ESColumn(subClass = true,clazz=ArrTest.class)
+    List<Integer> list;
+
     ArrTest arr;
 
     public ArrTest getArr() {

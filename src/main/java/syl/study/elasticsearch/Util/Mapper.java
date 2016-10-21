@@ -16,6 +16,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,28 +39,6 @@ public final class Mapper {
             prop = new HashMap<>();
         }
         for (Field f : fields) {
-            FieldProperties fprop = new FieldProperties();
-            ESColumn column = f.getAnnotation(ESColumn.class);
-            if (column != null) {
-                if (column.subClass()){
-                    Map<String,Object> obj = new HashMap<>();
-                    Map<String, Object> subProp = getProperties(column.clazz(),null,null);
-                    obj.put("type", ESDataType.NESTED.getEsType());
-                    obj.put("properties",subProp);
-                    prop.put(f.getName(),obj);
-                    continue;
-                }
-
-                if (column.store().equals(Store.NOT_STORE)) {
-                    fprop.setStore(false);
-                }
-                if (f.getType().equals("java.lang.String") && column.analyzed().equals(Analyzed.ANALYZED)) {
-                    fprop.setIndex(Analyzed.ANALYZED.getName());
-                }
-            } else {
-                fprop.setStore(true);
-                fprop.setIndex(Analyzed.NOT_ANALYZED.getName());
-            }
             String javaType = f.getType().getTypeName();
             //判断是不是泛型类
             if(f.getType().equals(Object.class)){
@@ -74,6 +53,38 @@ public final class Mapper {
             if (componentType != null){
                 javaType =componentType.getTypeName();
             }
+            //判断是不是集合
+            Class<?> tt = f.getType();
+            if (tt.isAssignableFrom(List.class) && !tt.equals(Object.class)){
+                Type t = f.getGenericType();
+                Type actrualType = ((ParameterizedType) t).getActualTypeArguments()[0];
+                if (isPrimetive( (Class<?>) actrualType)){
+                    javaType = actrualType.getTypeName();
+                }else {
+                    Map<String,Object> obj = getSub((Class<?>)actrualType);
+                    prop.put(f.getName(),obj);
+                    continue;
+                }
+            }
+            //判断是不是自定义类
+            if (!isPrimetive(f.getType())){
+                Map<String,Object> obj = getSub(f.getType());
+                prop.put(f.getName(),obj);
+                continue;
+            }
+            FieldProperties fprop = new FieldProperties();
+            ESColumn column = f.getAnnotation(ESColumn.class);
+            if (column != null) {
+                if (column.store().equals(Store.NOT_STORE)) {
+                    fprop.setStore(false);
+                }
+                if (f.getType().equals("java.lang.String") && column.analyzed().equals(Analyzed.ANALYZED)) {
+                    fprop.setIndex(Analyzed.ANALYZED.getName());
+                }
+            } else {
+                fprop.setStore(true);
+                fprop.setIndex(Analyzed.NOT_ANALYZED.getName());
+            }
             fprop.setType(ESDataType.getEsType(javaType));
             prop.put(f.getName(),fprop);
         }
@@ -84,6 +95,15 @@ public final class Mapper {
         return prop;
     }
 
+
+    private static Map<String,Object> getSub(Class<?> clazz){
+        Map<String,Object> obj = new HashMap<>();
+        Map<String, Object> subProp = getProperties(clazz,null,null);
+        obj.put("type", ESDataType.NESTED.getEsType());
+        obj.put("properties",subProp);
+        return obj;
+    }
+
     private static Alias getAlias(Class<?> clazz){
         //获取索引别名
         ESAliases aliases = clazz.getAnnotation(ESAliases.class);
@@ -91,6 +111,18 @@ public final class Mapper {
            return new Alias(aliases.value());
         }
         return null;
+    }
+
+
+    /**
+     * 判断当前类是不是java基础类
+     * @param clazz
+     * @return
+     */
+    private static boolean isPrimetive(Class<?> clazz){
+        System.out.println(clazz.getTypeName());
+        System.out.println("classLoader" + clazz.getClassLoader());
+        return clazz.getClassLoader() == null;
     }
 
     /**

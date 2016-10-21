@@ -11,17 +11,14 @@ import syl.study.elasticsearch.client.ESSearchUtil;
 import syl.study.elasticsearch.client.ESWriteUtil;
 import syl.study.elasticsearch.model.ArrTest;
 import syl.study.elasticsearch.model.Member;
-import syl.study.elasticsearch.model.MemberCore;
+import syl.study.elasticsearch.model.MemberCoreTest;
 import syl.study.elasticsearch.model.Points;
 import syl.study.utils.FastJsonUtil;
 
 import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -68,7 +65,7 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
         member.setPoints(pointses);
 
         member.setPrefer(new String[]{"swim","eat","sport"});
-        ESWriteUtil.updateIndex(member);
+        ESWriteUtil.addIndex(member);
     }
 
 
@@ -207,8 +204,9 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
 
     @Test
     public void addMember() throws UnknownHostException {
-        MemberCore member = new MemberCore();
+        MemberCoreTest member = new MemberCoreTest();
         member.setId(123456l);
+        member.setList(Arrays.asList(new Integer[]{2,3,4,5}));
         ESWriteUtil.addIndex(member);
     }
 

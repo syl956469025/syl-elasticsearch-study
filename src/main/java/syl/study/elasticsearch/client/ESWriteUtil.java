@@ -45,6 +45,7 @@ public class ESWriteUtil {
             throw new RuntimeException("添加的索引对象不可以为空");
         }
         Mapper.EntityInfo info = Mapper.getEntityInfo(t.getClass());
+        System.out.println(FastJsonUtil.bean2Json(info.getMappings()));
         try {
             add(t,info);
         }catch (IndexNotFoundException e){
