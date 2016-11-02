@@ -7,6 +7,8 @@ import java.util.Map;
  */
 public class MappingProperties {
 
+    public MappingProperties(){}
+
     /**
      * mapping properties
      * 结构为：

@@ -45,7 +45,6 @@ public class ESWriteUtil {
             throw new RuntimeException("添加的索引对象不可以为空");
         }
         Mapper.EntityInfo info = Mapper.getEntityInfo(t.getClass());
-        System.out.println(FastJsonUtil.bean2Json(info.getMappings()));
         try {
             add(t,info);
         }catch (IndexNotFoundException e){
@@ -292,9 +291,9 @@ public class ESWriteUtil {
         ElasticIndex index = info.getIndex();
         CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(index.getIndexName()).
                 addMapping(index.getIndexType(), FastJsonUtil.bean2Json(info.getMappings()));
-        if (info.getAlias()!=null){
-            builder.addAlias(info.getAlias());
-        }
+//        if (info.getAlias()!=null){
+//            builder.addAlias(info.getAlias());
+//        }
         builder.get();
     }
 

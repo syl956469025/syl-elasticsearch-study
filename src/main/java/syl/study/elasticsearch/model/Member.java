@@ -28,6 +28,7 @@ public class Member extends BaseEntity<Integer> {
 
     List<Integer> list;
 
+
     ArrTest arr;
 
     public ArrTest getArr() {

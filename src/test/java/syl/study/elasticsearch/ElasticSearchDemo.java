@@ -17,11 +17,12 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
 
     @Test
     public void searchTest(){
-        SearchResponse response = client.prepareSearch("complex")
-                .setTypes("child")
+        SearchResponse response = client.prepareSearch("member")
+                .setTypes("member")
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-//                .setPostFilter(termQuery())
-                .setQuery(booleanQuery())
+//                .setQuery("*:*")
+                .setPostFilter("name:zhangsan")
+//                .setQuery(booleanQuery())
                 .setFrom(0)
                 .setSize(10)
                 .execute().actionGet();

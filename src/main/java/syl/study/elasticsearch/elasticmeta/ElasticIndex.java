@@ -5,6 +5,9 @@ package syl.study.elasticsearch.elasticmeta;
  */
 public class ElasticIndex {
 
+
+    public ElasticIndex(){}
+
     String IndexName;
 
     String IndexType;

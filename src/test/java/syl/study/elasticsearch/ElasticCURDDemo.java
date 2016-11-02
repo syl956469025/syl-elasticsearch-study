@@ -47,10 +47,10 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
         member.setAge(14);
         member.setBirthday(LocalDateTime.now());
         member.setName("张无忌11");
-        member.setId(12);
+        member.setId(13);
         member.setUserId(123456);
         member.setPrice(12.4);
-        member.setPric(12.5f);
+//        member.setPric(12.5f);
         List<Points> pointses = new ArrayList<>();
         Points p = new Points();
         p.setCards(new String[]{"1234","3456","234567"});
@@ -112,7 +112,7 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
         member.setId(11);
         member.setUserId(123456);
         member.setPrice(12.4);
-        member.setPric(12.6f);
+//        member.setPric(12.6f);
         ESWriteUtil.updateIndex(member);
 
     }
@@ -143,7 +143,7 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
             member.setName("张无忌"+i);
             member.setBirthday(LocalDateTime.now());
             member.setPrice(2.3 + i);
-            member.setPric(2.5f);
+//            member.setPric(2.5f);
             member.setUserId(123456+i);
             list.add(member);
         }
@@ -161,7 +161,7 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
             member.setBirthday(LocalDateTime.now());
             member.setPrice(2.4 + i);
             member.setBir(LocalDate.now());
-            member.setPric(2.7f);
+//            member.setPric(2.7f);
             member.setUserId(123456+i);
             list.add(member);
         }
@@ -196,7 +196,17 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
         nests.put("arr.zhangsan","iszhangsan");
         nest.put("arr",nests);
 
+        String nestedString = "arr.age:[ 3 TO 5 ]";
+        String nestedString1 = "arr.age:[ * TO 5 ]";
+        String nestedString2 = "arr.age:[ 3 TO * ]";
+        String nestedString4 = "arr.age:{ 3 TO 5 }";
+        String nestedString5 = "arr.age:{ * TO 5 }";
+        String nestedString6 = "arr.age:{ 3 TO * }";
+
 //        String filter = "price:[ 2.3 TO 8.3 ]";
+
+
+
         SearchResponse query = ESSearchUtil.query(Member.class, properties, sort, null,nest,null, 1, 10);
         writeSearchResponse(query);
     }

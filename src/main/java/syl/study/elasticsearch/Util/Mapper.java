@@ -120,8 +120,6 @@ public final class Mapper {
      * @return
      */
     private static boolean isPrimetive(Class<?> clazz){
-        System.out.println(clazz.getTypeName());
-        System.out.println("classLoader" + clazz.getClassLoader());
         return clazz.getClassLoader() == null;
     }
 
@@ -157,7 +155,7 @@ public final class Mapper {
 
         ElasticIndex index;
 
-
+        public EntityInfo(){}
 
         public EntityInfo(Class<?> clazz,Map<String, Object> properties,Alias alias,ElasticIndex index){
             this.mappings = new MappingProperties(properties);
