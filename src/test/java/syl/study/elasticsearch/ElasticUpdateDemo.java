@@ -35,7 +35,7 @@ public class ElasticUpdateDemo extends BaseElasticSearchTest{
         request.index("customer").type("custom").id("2");
         Map<String, String> param = new HashMap<>();
         param.put("newName", "zhangsan");
-        request.script(new Script("ctx._source.name=newName", ScriptService.ScriptType.INLINE, null, param));
+        request.script(new Script("ctx._source.name=newName", ScriptService.ScriptType.FILE, null, param));
         UpdateResponse response = client.update(request).get();
         System.out.println(FastJsonUtil.bean2Json(response));
     }
@@ -77,10 +77,10 @@ public class ElasticUpdateDemo extends BaseElasticSearchTest{
         request.index("productor").type("product").id("4");
         Map<String,Object> param = new HashMap<>();
 //        param.put("prefers",new String[]{"swim","eat","run","sing"});
-//        request.script(new Script("ctx._source.prefer=prefers", ScriptService.ScriptType.INLINE,"groovy",param));
+        request.script(new Script("ctx._source.prefer=prefers", ScriptService.ScriptType.INLINE,"groovy",param));
         param.put("username","张无忌4");
         param.put("nickname","张无忌4");
-//        request.script(new Script("ctx._source.username=username", ScriptService.ScriptType.INLINE,"groovy",param));
+        request.script(new Script("ctx._source.username=username", ScriptService.ScriptType.INLINE,"groovy",param));
         request.script(new Script("ctx._source.nickname=nickname", ScriptService.ScriptType.INLINE,"groovy",param));
         UpdateResponse response = client.update(request).get();
         System.out.println(FastJsonUtil.bean2Json(response));

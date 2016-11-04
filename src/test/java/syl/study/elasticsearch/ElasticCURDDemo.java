@@ -9,10 +9,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Test;
 import syl.study.elasticsearch.client.ESSearchUtil;
 import syl.study.elasticsearch.client.ESWriteUtil;
-import syl.study.elasticsearch.model.ArrTest;
-import syl.study.elasticsearch.model.Member;
-import syl.study.elasticsearch.model.MemberCoreTest;
-import syl.study.elasticsearch.model.Points;
+import syl.study.elasticsearch.model.*;
 import syl.study.utils.FastJsonUtil;
 
 import java.net.UnknownHostException;
@@ -47,17 +44,20 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
         member.setAge(14);
         member.setBirthday(LocalDateTime.now());
         member.setName("张无忌11");
-        member.setId(13);
+        member.setId(2);
         member.setUserId(123456);
         member.setPrice(12.4);
 //        member.setPric(12.5f);
         List<Points> pointses = new ArrayList<>();
-        Points p = new Points();
-        p.setCards(new String[]{"1234","3456","234567"});
-        p.setLevel(1);
-        p.setPoint(2);
-        p.setUserId(12356);
-        pointses.add(p);
+        for (int i=0;i<5;i++){
+            Points p = new Points();
+            p.setCards(new String[]{"1234","3456","234567"});
+            p.setLevel(1+i+1);
+            p.setPoint(2);
+            p.setUserId(12356);
+            pointses.add(p);
+        }
+
         ArrTest arr = new ArrTest();
         arr.setPrefer(new String[]{"swim","eat"});
         arr.setZhangsan("iszhangsan");
@@ -207,8 +207,8 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
 
 
 
-        SearchResponse query = ESSearchUtil.query(Member.class, properties, sort, null,nest,null, 1, 10);
-        writeSearchResponse(query);
+//        SearchResponse query = ESSearchUtil.query(Member.class, properties, sort, null,nest,null, 1, 10);
+//        writeSearchResponse(query);
     }
 
 
@@ -218,6 +218,19 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
         member.setId(123456l);
         member.setList(Arrays.asList(new Integer[]{2,3,4,5}));
         ESWriteUtil.addIndex(member);
+    }
+
+
+
+
+    @Test
+    public void add() throws UnknownHostException {
+        Kequn k = new Kequn();
+        k.setCinemaId("6");
+        k.setKid("2");
+        k.setUserId("3");
+        k.setId(UUID.randomUUID().toString());
+        ESWriteUtil.addIndex(k);
     }
 
 

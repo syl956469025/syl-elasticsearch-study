@@ -58,6 +58,9 @@ public class ESWriteUtil {
         }
     }
 
+
+
+
     /**
      * 更新索引数据
      * @param t

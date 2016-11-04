@@ -9,14 +9,18 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.global.GlobalBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import syl.study.elasticsearch.Util.Mapper;
 import syl.study.elasticsearch.Util.StrKit;
 import syl.study.elasticsearch.elasticmeta.ElasticIndex;
 import syl.study.elasticsearch.model.BaseEntity;
+import syl.study.elasticsearch.model.IndexAgg;
 
 import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -66,13 +70,14 @@ public class ESSearchUtil {
                                                                 String filterQuery,
                                                                 Map<String,Map<String,Object>> nestParams,
                                                                 Map<String,String> nestFilterString,
+                                                                IndexAgg indexAgg,
                                                                 int pageIndex,int pageSize) throws UnknownHostException {
         client = TClient.getClient();
         Mapper.EntityInfo info = Mapper.getEntityInfo(clazz);
         ElasticIndex index = info.getIndex();
         SearchRequestBuilder builder = client.prepareSearch(index.getIndexName())
                 .setTypes(index.getIndexType())
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setSearchType(SearchType.QUERY_AND_FETCH)
                 .setFrom((pageIndex - 1) * pageSize)
                 .setSize(pageSize);
 
@@ -107,10 +112,55 @@ public class ESSearchUtil {
         if (sort !=null && !sort.isEmpty()){
             sort(builder ,sort);
         }
+        GlobalBuilder agg = getAgg(indexAgg);
+        if (agg !=null){
+            builder.addAggregation(agg);
+        }
         builder.setPostFilter(booleanQueryBuilder);
         SearchResponse response = builder.get();
         return response;
     }
+
+
+
+    private static GlobalBuilder getAgg(IndexAgg indexAgg){
+        if (indexAgg == null){
+            return null;
+        }
+        GlobalBuilder global = AggregationBuilders.global("global");
+
+
+        Set<String> fields = indexAgg.getAggregation();
+//        Map<String, IndexAgg.RangeAgg<Number>[]> range = indexAgg.getRangeAgg();
+        if (!fields.isEmpty()){
+            for (String f : fields) {
+                global.subAggregation(AggregationBuilders.terms(f).field(f));
+            }
+        }
+//        if (!range.isEmpty()){
+//            for (Map.Entry<String, IndexAgg.RangeAgg<Number>[]> entry : range.entrySet()) {
+//                String key = entry.getKey();
+//                IndexAgg.RangeAgg<Number>[] value = entry.getValue();
+//                RangeBuilder rangeBuilder = AggregationBuilders.range(key).field(key);
+//                for (IndexAgg.RangeAgg<Number> agg : value) {
+//                    Number start = agg.getStart();
+//                    Number end = agg.getEnd();
+//                    if (start == null){
+//                        rangeBuilder.addUnboundedTo(end.doubleValue());
+//                    }else if (end == null){
+//                        rangeBuilder.addUnboundedFrom(start.doubleValue());
+//                    }else {
+//                        rangeBuilder.addRange(start.doubleValue(),end.doubleValue());
+//                    }
+//                }
+//                global.subAggregation(rangeBuilder);
+//            }
+//        }
+
+        return global;
+    }
+
+
 
     //排序
     private static void sort(SearchRequestBuilder builder , Map<String, SortOrder> sort){
@@ -140,6 +190,9 @@ public class ESSearchUtil {
                 }
                 qs.append(")");
             } else {
+                if (qs.length() != 0){
+                    qs.append(" AND ");
+                }
                 qs.append(key+":"+o);
             }
         });
@@ -161,8 +214,10 @@ public class ESSearchUtil {
                                                               Map<String,Object> params,
                                                               Map<String, SortOrder> sort,
                                                               int pageIndex,int pageSize) throws UnknownHostException {
-        return query(clazz,params,sort,null,null,null,pageIndex,pageSize);
+        return query(clazz,params,sort,null,null,null,null,pageIndex,pageSize);
     }
+
+
 
 
 }
