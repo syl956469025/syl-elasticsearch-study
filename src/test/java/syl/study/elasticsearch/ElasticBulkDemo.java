@@ -94,7 +94,7 @@ public class ElasticBulkDemo extends BaseElasticSearchTest{
     @Test
     public void testImportJsonFile(){
         BulkRequestBuilder builder = client.prepareBulk();
-        IndexRequestBuilder indexBuilder2 = client.prepareIndex("chongqingtest", "dlzxx_1");
+//        builder.add(QueryBuilders.boolQuery())
 
     }
 

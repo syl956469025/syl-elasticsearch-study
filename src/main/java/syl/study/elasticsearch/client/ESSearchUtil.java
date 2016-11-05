@@ -9,18 +9,22 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.global.Global;
 import org.elasticsearch.search.aggregations.bucket.global.GlobalBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.sort.SortOrder;
 import syl.study.elasticsearch.Util.Mapper;
 import syl.study.elasticsearch.Util.StrKit;
 import syl.study.elasticsearch.elasticmeta.ElasticIndex;
+import syl.study.elasticsearch.elasticmeta.SearchResult;
 import syl.study.elasticsearch.model.BaseEntity;
 import syl.study.elasticsearch.model.IndexAgg;
+import syl.study.utils.FastJsonUtil;
 
 import java.net.UnknownHostException;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -64,7 +68,7 @@ public class ESSearchUtil {
      * @return
      * @throws UnknownHostException
      */
-    public static <T extends BaseEntity> SearchResponse query(Class<T> clazz,
+    public static <T extends BaseEntity> SearchResult<T> query(Class<T> clazz,
                                                                 Map<String,Object> params,
                                                                 Map<String, SortOrder> sort,
                                                                 String filterQuery,
@@ -118,7 +122,7 @@ public class ESSearchUtil {
         }
         builder.setPostFilter(booleanQueryBuilder);
         SearchResponse response = builder.get();
-        return response;
+        return getResult(clazz,response,indexAgg);
     }
 
 
@@ -210,7 +214,7 @@ public class ESSearchUtil {
      * @return
      * @throws UnknownHostException
      */
-    public static <T extends BaseEntity> SearchResponse query(Class<T> clazz,
+    public static <T extends BaseEntity> SearchResult<T> query(Class<T> clazz,
                                                               Map<String,Object> params,
                                                               Map<String, SortOrder> sort,
                                                               int pageIndex,int pageSize) throws UnknownHostException {
@@ -218,6 +222,44 @@ public class ESSearchUtil {
     }
 
 
+    /**
+     * 获取结果
+     * @param response
+     * @return
+     */
+    public static <T extends BaseEntity> SearchResult<T> getResult(Class<T> clazz, SearchResponse response, IndexAgg indexAgg){
+        SearchResult<T> result = new SearchResult<>();
+        //设置查询总条数
+        result.setSearchCount(Integer.valueOf(String.valueOf(response.getHits().getTotalHits())));
+        //设置fqResult
+        SearchHit[] hits = response.getHits().getHits();
+        List<T> searchList= new ArrayList<>();
+        for (SearchHit doc : hits) {
+            T t = FastJsonUtil.json2Bean(doc.getSourceAsString(), clazz);
+            searchList.add(t);
+        }
+        result.setSearchList(searchList);
+        //设置aggResult
+        if (indexAgg !=null){
+            result.setAggResult(aggResult(response, indexAgg));
+        }
+
+        return result;
+    }
 
 
+    private static Map<String,Map<Object,Long>> aggResult(SearchResponse response,IndexAgg indexAgg){
+        Map<String,Map<Object,Long>> aggResult = new HashMap<>();
+        Global global = response.getAggregations().get("global");
+        Set<String> fields = indexAgg.getAggregation();
+        for (String f : fields) {
+            Terms term = global.getAggregations().get(f);
+            Map<Object,Long> res = new HashMap<>();
+            for (Terms.Bucket b : term.getBuckets()) {
+                res.put(b.getKey(),b.getDocCount());
+            }
+            aggResult.put(f,res);
+        }
+        return aggResult;
+    }
 }

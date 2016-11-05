@@ -26,6 +26,7 @@ import org.elasticsearch.search.aggregations.metrics.min.Min;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.junit.Test;
 import syl.study.elasticsearch.client.ESSearchUtil;
+import syl.study.elasticsearch.elasticmeta.SearchResult;
 import syl.study.elasticsearch.model.IndexAgg;
 import syl.study.elasticsearch.model.Kequn;
 import syl.study.utils.FastJsonUtil;
@@ -357,14 +358,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
         agg.addAggField("cinemaId");
         Map<String,Object> params = new HashMap<>();
         params.put("kid",2);
-        SearchResponse query = ESSearchUtil.query(Kequn.class, params, null, null, null, null, agg, 1, 30);
-        Global global = query.getAggregations().get("global");
-        Terms term = global.getAggregations().get("cinemaId");
-        for (Terms.Bucket b : term.getBuckets()) {
-            Object key = b.getKey();
-            long count = b.getDocCount();
-            System.out.println("key: "+key +"  count: "+count);
-        }
+        SearchResult<Kequn> result = ESSearchUtil.query(Kequn.class, params, null, null, null, null, agg, 1, 30);
 
 
     }

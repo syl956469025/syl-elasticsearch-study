@@ -16,15 +16,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 public @interface ESColumn {
 
-    boolean subClass();
-
-    Class<?> clazz();
 
     Store store() default Store.STORE;
 
     Analyzed analyzed() default Analyzed.NOT_ANALYZED;
 
-    String name() default "";
 
 
 

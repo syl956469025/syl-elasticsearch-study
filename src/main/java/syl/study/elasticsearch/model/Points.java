@@ -3,7 +3,7 @@ package syl.study.elasticsearch.model;
 /**
  * Created by Mtime on 2016/10/19.
  */
-public class Points {
+public class Points extends BaseEntity<Long> {
 
     int level;
 

@@ -59,7 +59,7 @@ public class ElasticUpdateDemo extends BaseElasticSearchTest{
 //        request.script(new Script("ctx._source.name += anotherName", ScriptService.ScriptType.INLINE,"groovy",param));
         request.script(new Script("ctx._source.name -= anotherName", ScriptService.ScriptType.INLINE,"groovy",param));
         UpdateResponse response = client.update(request).get();
-        System.out.println(FastJsonUtil.bean2Json(response));
+        System.out.println(FastJsonUtil.bean2Json(response));   
     }
 
 

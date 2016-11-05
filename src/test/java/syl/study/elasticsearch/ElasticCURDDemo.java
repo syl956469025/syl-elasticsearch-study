@@ -1,8 +1,14 @@
 package syl.study.elasticsearch;
 
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.get.MultiGetItemResponse;
+import org.elasticsearch.action.get.MultiGetRequest;
+import org.elasticsearch.action.get.MultiGetResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.sort.SortOrder;
@@ -135,19 +141,19 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
     }
 
     @Test
-    public void addIndexList() throws UnknownHostException, ExecutionException, InterruptedException {
-        List<Member> list = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
+    public void addIndexList() throws UnknownHostException {
+//        List<Member> list = new ArrayList<>();
+//        for (int i = 0; i < 10; i++) {
             Member member = new Member();
-            member.setId(i+1);
-            member.setName("张无忌"+i);
+            member.setId(2);
+            member.setName("Quick brown foxes leap over lazy dogs in summer");
             member.setBirthday(LocalDateTime.now());
-            member.setPrice(2.3 + i);
+            member.setPrice(2.3);
 //            member.setPric(2.5f);
-            member.setUserId(123456+i);
-            list.add(member);
-        }
-        ESWriteUtil.addIndexList(list);
+            member.setUserId(123456);
+//            list.add(member);
+//        }
+        ESWriteUtil.addIndex(member);
     }
 
 
@@ -234,4 +240,49 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
     }
 
 
+    @Test
+    public void delete(){
+        Kequn k = new Kequn();
+        k.setCinemaId("cinemaId");
+        k.setKid("kid");
+        k.setUserId("userId");
+        k.setId("id");
+        IndexResponse res = client.prepareIndex("kequn", "kequn", "1c353f62-a045-4248-9407-4fd0ff982des")
+                .setSource(FastJsonUtil.bean2Json(k))
+                .setOpType(IndexRequest.OpType.CREATE)
+                .setVersionType(VersionType.EXTERNAL)
+                .setVersion(new Date().getTime())
+                .get();
+        System.out.println(FastJsonUtil.bean2Json(res));
+    }
+
+    @Test
+    public void testVersion(){
+        GetResponse response = client.prepareGet("kequn", "kequn", "1c353f62-a045-4248-9407-4fd0ff982des").get();
+        System.out.println(FastJsonUtil.bean2Json(response));
+
+//        UpdateResponse res = client.prepareUpdate("kequn", "kequn", "1c353f62-a045-4248-9407-4fd0ff982des")
+//                .setDoc(response.getSourceAsString())
+//                .setVersion(1478256494307l)
+//                .get();
+
+    }
+
+
+    @Test
+    public void mget(){
+        MultiGetRequest request = new MultiGetRequest();
+        MultiGetRequest.Item item = new MultiGetRequest.Item("website","blog","2");
+        MultiGetRequest.Item item2 = new MultiGetRequest.Item("website","blog","1");
+        request.add(item);
+        request.add(item2);
+        MultiGetResponse response = client.multiGet(request).actionGet();
+        MultiGetItemResponse[] responses = response.getResponses();
+        for (MultiGetItemResponse res : responses) {
+            GetResponse rs = res.getResponse();
+            System.out.println(FastJsonUtil.bean2Json(rs));
+            String resource = rs.getSourceAsString();
+            System.out.println(resource);
+        }
+    }
 }

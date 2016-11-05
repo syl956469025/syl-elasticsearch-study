@@ -1,5 +1,8 @@
 package syl.study.elasticsearch.model;
 
+import syl.study.elasticsearch.annotation.ESColumn;
+import syl.study.elasticsearch.enums.Analyzed;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,6 +15,7 @@ public class Member extends BaseEntity<Integer> {
 
     private long userId;
 
+    @ESColumn(analyzed = Analyzed.ANALYZED)
     private String name;
 
     private int age;

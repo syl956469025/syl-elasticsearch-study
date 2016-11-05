@@ -1,7 +1,6 @@
 package syl.study.elasticsearch.model;
 
 import syl.study.elasticsearch.annotation.ESAliases;
-import syl.study.elasticsearch.annotation.ESColumn;
 import syl.study.elasticsearch.annotation.ESIndex;
 
 import java.util.List;
@@ -19,7 +18,6 @@ public class IndexMapping extends BaseEntity<String> {
     String indexType;
 
 
-    @ESColumn(subClass = true,clazz = FieldInfo.class)
     List<FieldInfo> fieldInfos;
 
     public String getIndexName() {

@@ -6,23 +6,29 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Test;
-import syl.study.utils.FastJsonUtil;
+import syl.study.elasticsearch.client.ESSearchUtil;
+import syl.study.elasticsearch.elasticmeta.SearchResult;
+import syl.study.elasticsearch.model.User;
+
+import java.util.List;
 
 /**
  * Created by Mtime on 2016/10/13.
  */
 public class ElasticSearchDemo extends BaseElasticSearchTest {
 
+    private final static String index = "smovie";
+    private final static String type = "smovie";
+
 
 
     @Test
     public void searchTest(){
-        SearchResponse response = client.prepareSearch("member")
-                .setTypes("member")
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-//                .setQuery("*:*")
-                .setPostFilter("name:zhangsan")
-//                .setQuery(booleanQuery())
+        SearchResponse response = client.prepareSearch(index)
+                .setTypes(type)
+                .setSearchType(SearchType.QUERY_AND_FETCH)
+                .setPostFilter(rangeQuery())
+                .setQuery(booleanQuery())
                 .setFrom(0)
                 .setSize(10)
                 .execute().actionGet();
@@ -32,15 +38,39 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
 
     @Test
     public void searchNestedTest(){
-        SearchResponse response = client.prepareSearch("member")
-                .setTypes("member")
-                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(queryString())
+        SearchResponse response = client.prepareSearch("user")
+                .setTypes("user")
+                .setSearchType(SearchType.QUERY_AND_FETCH)
+                .setQuery(nestedQuery())
                 .setFrom(0)
                 .setSize(10)
                 .get();
-        System.out.println(FastJsonUtil.bean2Json(response));
-        writeSearchResponse(response);
+//        System.out.println(FastJsonUtil.bean2Json(response));
+//        writeSearchResponse(response);
+        SearchResult<User> result = ESSearchUtil.getResult(User.class, response, null);
+        List<User> res = result.getSearchList();
+        if (res !=null && !res.isEmpty()){
+            for (User user : res) {
+                System.out.println(user.getId());
+            }
+        }else{
+            System.out.println("为空");
+        }
+    }
+
+    /**
+     * nestedQuery
+     *
+     * 用于对象嵌套查询，
+     *
+     * @return
+     */
+    public QueryBuilder nestedQuery(){
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
+//                .must(QueryBuilders.matchQuery("kequns.id", "a"))
+            .mustNot(QueryBuilders.matchQuery("kequns.id", "b"));
+
+        return QueryBuilders.nestedQuery("kequns",boolQuery);
     }
 
     /**
@@ -62,12 +92,17 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
 
     public QueryBuilder booleanQuery(){
         return QueryBuilders.boolQuery()
-                .should(QueryBuilders.termQuery("username","张无忌"));
+                .must(QueryBuilders.matchQuery("nameCN","铁拳"))
+                .filter(QueryBuilders.termQuery("year","2015"));
     }
 
 
     public QueryBuilder termQuery(){
-        return QueryBuilders.termQuery("username","张无忌");
+        return QueryBuilders.termQuery("nameCN","铁拳");
+    }
+
+    public QueryBuilder termsQuery(){
+        return QueryBuilders.termsQuery("nameCN","铁拳","湖底魔兽");
     }
 
 
@@ -129,25 +164,24 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
         return QueryBuilders.wildcardQuery("name", "张无忌*");
     }
 
-    /**
-     * nestedQuery
-     *
-     * 用于对象嵌套查询，
-     *
-     * @return
-     */
-    public QueryBuilder nestedQuery(){
-        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
-                .must(QueryBuilders.matchQuery("member.name", "张无忌"))
-                .must(QueryBuilders.matchQuery("member.age", 12));
 
-
-
-        return QueryBuilders.nestedQuery("member",boolQuery);
-    }
 
     public QueryBuilder rangeQuery(){
-        return QueryBuilders.rangeQuery("price").from(2.3).to(8.3);
+        return QueryBuilders.rangeQuery("id").from(200000).to(500000);
+    }
+
+
+    /**
+     * 指定要返回的字段
+     */
+    @Test
+    public void fetchSourceDemo(){
+        SearchResponse response = client.prepareSearch("user")
+                .setTypes("user")
+                .setQuery(QueryBuilders.queryStringQuery("id:2"))
+                .setFetchSource("id", "kequn")
+                .get();
+        writeSearchResponse(response);
     }
 
 }
