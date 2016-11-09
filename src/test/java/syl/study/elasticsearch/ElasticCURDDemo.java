@@ -54,21 +54,21 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
         member.setUserId(123456);
         member.setPrice(12.4);
 //        member.setPric(12.5f);
-        List<Points> pointses = new ArrayList<>();
-        for (int i=0;i<5;i++){
-            Points p = new Points();
-            p.setCards(new String[]{"1234","3456","234567"});
-            p.setLevel(1+i+1);
-            p.setPoint(2);
-            p.setUserId(12356);
-            pointses.add(p);
-        }
+//        List<Points> pointses = new ArrayList<>();
+//        for (int i=0;i<5;i++){
+//            Points p = new Points();
+//            p.setCards(new String[]{"1234","3456","234567"});
+//            p.setLevel(1+i+1);
+//            p.setPoint(2);
+//            p.setUserId(12356);
+//            pointses.add(p);
+//        }
 
-        ArrTest arr = new ArrTest();
-        arr.setPrefer(new String[]{"swim","eat"});
-        arr.setZhangsan("iszhangsan");
-        member.setArr(arr);
-        member.setPoints(pointses);
+//        ArrTest arr = new ArrTest();
+//        arr.setPrefer(new String[]{"swim","eat"});
+//        arr.setZhangsan("iszhangsan");
+//        member.setArr(arr);
+//        member.setPoints(pointses);
 
         member.setPrefer(new String[]{"swim","eat","sport"});
         ESWriteUtil.addIndex(member);

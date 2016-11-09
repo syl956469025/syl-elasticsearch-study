@@ -10,21 +10,24 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
-import org.elasticsearch.search.aggregations.bucket.global.GlobalBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.elasticsearch.search.sort.SortOrder;
 import syl.study.elasticsearch.Util.Mapper;
 import syl.study.elasticsearch.Util.StrKit;
-import syl.study.elasticsearch.elasticmeta.ElasticIndex;
-import syl.study.elasticsearch.elasticmeta.SearchResult;
+import syl.study.elasticsearch.elasticmeta.*;
+import syl.study.elasticsearch.enums.AggType;
 import syl.study.elasticsearch.model.BaseEntity;
-import syl.study.elasticsearch.model.IndexAgg;
 import syl.study.utils.FastJsonUtil;
 
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -116,7 +119,7 @@ public class ESSearchUtil {
         if (sort !=null && !sort.isEmpty()){
             sort(builder ,sort);
         }
-        GlobalBuilder agg = getAgg(indexAgg);
+        AggregationBuilder agg = getAgg(indexAgg);
         if (agg !=null){
             builder.addAggregation(agg);
         }
@@ -127,41 +130,8 @@ public class ESSearchUtil {
 
 
 
-    private static GlobalBuilder getAgg(IndexAgg indexAgg){
-        if (indexAgg == null){
-            return null;
-        }
-        GlobalBuilder global = AggregationBuilders.global("global");
-
-
-        Set<String> fields = indexAgg.getAggregation();
-//        Map<String, IndexAgg.RangeAgg<Number>[]> range = indexAgg.getRangeAgg();
-        if (!fields.isEmpty()){
-            for (String f : fields) {
-                global.subAggregation(AggregationBuilders.terms(f).field(f));
-            }
-        }
-//        if (!range.isEmpty()){
-//            for (Map.Entry<String, IndexAgg.RangeAgg<Number>[]> entry : range.entrySet()) {
-//                String key = entry.getKey();
-//                IndexAgg.RangeAgg<Number>[] value = entry.getValue();
-//                RangeBuilder rangeBuilder = AggregationBuilders.range(key).field(key);
-//                for (IndexAgg.RangeAgg<Number> agg : value) {
-//                    Number start = agg.getStart();
-//                    Number end = agg.getEnd();
-//                    if (start == null){
-//                        rangeBuilder.addUnboundedTo(end.doubleValue());
-//                    }else if (end == null){
-//                        rangeBuilder.addUnboundedFrom(start.doubleValue());
-//                    }else {
-//                        rangeBuilder.addRange(start.doubleValue(),end.doubleValue());
-//                    }
-//                }
-//                global.subAggregation(rangeBuilder);
-//            }
-//        }
-
-        return global;
+    public static AggregationBuilder getAgg(IndexAgg indexAgg){
+        return ESAggBuilder.getAggs(indexAgg, null);
     }
 
 
@@ -241,25 +211,80 @@ public class ESSearchUtil {
         result.setSearchList(searchList);
         //设置aggResult
         if (indexAgg !=null){
-            result.setAggResult(aggResult(response, indexAgg));
+            result.setAggResult(aggResult(response, indexAgg,clazz));
         }
 
         return result;
     }
 
 
-    private static Map<String,Map<Object,Long>> aggResult(SearchResponse response,IndexAgg indexAgg){
-        Map<String,Map<Object,Long>> aggResult = new HashMap<>();
-        Global global = response.getAggregations().get("global");
-        Set<String> fields = indexAgg.getAggregation();
-        for (String f : fields) {
-            Terms term = global.getAggregations().get(f);
-            Map<Object,Long> res = new HashMap<>();
-            for (Terms.Bucket b : term.getBuckets()) {
-                res.put(b.getKey(),b.getDocCount());
+    private static <T extends BaseEntity> Map<String,Map<Object,Long>> aggResult(SearchResponse response,IndexAgg indexAgg,Class<T> clazz){
+        Aggregation agg = response.getAggregations().get(AggType.GLOBAL.name());
+        AggResult<T> tAggResult = testDemo(indexAgg, clazz, agg);
+        System.out.println(FastJsonUtil.bean2Json(tAggResult));
+        return null;
+    }
+
+    private static <T extends BaseEntity> AggResult<T> testDemo(IndexAgg indexAgg, Class<T> clazz, Aggregation agg) {
+        return getResult(indexAgg, agg, clazz, (result, aggs, type, index) -> {
+            if (result == null&& aggs==null && StrKit.isBlank(type) && index == null){
+                return null;
             }
-            aggResult.put(f,res);
+            testDemo(indexAgg, clazz, agg);
+            return result;
+        });
+
+
+    }
+
+
+    private static <T extends BaseEntity> AggResult<T> getResult(IndexAgg indexAgg,
+                                                                 Aggregation agg,
+                                                                 Class<T> clazz,
+                                                                 MConsumer<AggResult,AggResult,Aggregation,String,IndexAgg> action){
+        String type = indexAgg.getType();
+        String field = indexAgg.getField();
+        if (type.equals(AggType.GLOBAL.name())){
+            AggResult aggResult = AggResult.aggResult(null, null);
+            if (indexAgg.isLeaf()){
+                return aggResult;
+            }
+            Global global = (Global)agg;
+            indexAgg.action(index ->{
+                AggResult subAggResult = action.accept(aggResult, global, type, index);
+                aggResult.subResult(subAggResult);
+            });
+            return aggResult;
+        }else if (type.equals(AggType.TOP.name())){
+            TopHits top = (TopHits)agg;
+            SearchHit[] hits = top.getHits().getHits();
+            List<T> list = new ArrayList<>();
+            for (SearchHit hit : hits) {
+                list.add(FastJsonUtil.json2Bean(hit.getSourceAsString(), clazz));
+            }
+            return AggResult.aggResult(field,null).addData(field,list);
+        }else if (type.equals(AggType.TERMS.name())){
+            Terms terms= (Terms)agg;
+            List<Terms.Bucket> buckets = terms.getBuckets();
+            Map<Object,Long> countMap = new HashMap<>();
+            AggResult aggResult = AggResult.aggResult(null, null);
+            for (Terms.Bucket bucket : buckets) {
+                Object key = bucket.getKey();
+                long count = bucket.getDocCount();
+                countMap.put(key,count);
+                if (!indexAgg.isLeaf()){
+                    indexAgg.action(index ->{
+                        Aggregation aggregation = bucket.getAggregations().get(index.getName());
+                        AggResult subAggResult = action.accept(null, aggregation, index.getType(), index);
+                        aggResult.subResult(subAggResult);
+                    });
+                }
+            }
+            aggResult.setField(field);
+            aggResult.setCount(countMap);
+            return aggResult;
+        }else{
+            throw new RuntimeException("不支持该类型的聚合");
         }
-        return aggResult;
     }
 }

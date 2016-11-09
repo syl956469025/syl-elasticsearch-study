@@ -26,15 +26,14 @@ import org.elasticsearch.search.aggregations.metrics.min.Min;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.junit.Test;
 import syl.study.elasticsearch.client.ESSearchUtil;
+import syl.study.elasticsearch.elasticmeta.IndexAgg;
+import syl.study.elasticsearch.elasticmeta.IndexAggBuilder;
 import syl.study.elasticsearch.elasticmeta.SearchResult;
-import syl.study.elasticsearch.model.IndexAgg;
-import syl.study.elasticsearch.model.Kequn;
+import syl.study.elasticsearch.model.Member;
 import syl.study.utils.FastJsonUtil;
 
 import java.net.UnknownHostException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Mtime on 2016/11/3.
@@ -49,27 +48,52 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
     @Test
     public void globalAgg(){
         GlobalBuilder global = AggregationBuilders.global("global").subAggregation(
-                AggregationBuilders.terms("year").field("year")
+                AggregationBuilders.terms("year").field("year").subAggregation(
+                        AggregationBuilders.terms("name").field("nameEN").subAggregation(
+                                AggregationBuilders.topHits("top").setSize(Integer.MAX_VALUE)
+                        )
+                )
         );
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
-//                .setQuery(QueryBuilders.queryStringQuery(""))
+                .setQuery(QueryBuilders.queryStringQuery(""))
                 .addAggregation(global)
                 .get();
-        writeSearchResponse(response);
+//        writeSearchResponse(response);
         Global agg = response.getAggregations().get("global");
         System.out.println(agg.getDocCount());
-
         Terms year = agg.getAggregations().get("year");
         List<Terms.Bucket> buckets = year.getBuckets();
         buckets.forEach(b ->{
             Object key = b.getKey();
             long docCount = b.getDocCount();
-            System.out.println("key: "+key +"  count: "+docCount);
+//            System.out.println("key: "+key +"  count: "+docCount);
+            Terms name = b.getAggregations().get("name");
+            List<Terms.Bucket> bb = name.getBuckets();
+            for (Terms.Bucket bucket : bb) {
+                Object k = bucket.getKey();
+                long count = bucket.getDocCount();
+                System.out.println("key1 : " + key +"  key2: "+ k  + " count: "+ count);
+                TopHits top = bucket.getAggregations().get("top");
+                SearchHit[] hits = top.getHits().getHits();
+                for (SearchHit hit : hits) {
+                    System.out.println(hit.getSourceAsString());
+                }
+            }
         });
+    }
+
+    @Test
+    public void testTerm(){
 
 
     }
+
+
+
+
+
+
 
 
     /**
@@ -215,6 +239,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
     @Test
     public void termAgg(){
         TermsBuilder term = AggregationBuilders.terms("agg").field("areaId").size(100).shardSize(200);
+
         SearchResponse response = client.prepareSearch("ticketorderinfo")
                 .setTypes("ticketorderinfo")
                 .addAggregation(term)
@@ -354,14 +379,18 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
 
     @Test
     public void testData1() throws UnknownHostException {
-        IndexAgg agg = new IndexAgg();
-        agg.addAggField("cinemaId");
-        Map<String,Object> params = new HashMap<>();
-        params.put("kid",2);
-        SearchResult<Kequn> result = ESSearchUtil.query(Kequn.class, params, null, null, null, null, agg, 1, 30);
+        IndexAgg indexAgg = IndexAggBuilder.terms("year")
+                .subIndexAgg(IndexAggBuilder.terms("nameEN")
+                        .subIndexAgg(IndexAggBuilder.top()));
 
+        SearchResult<Member> result = ESSearchUtil.query(Member.class, null, null, null, null, null, indexAgg, 1, 30);
+    }
+
+    @Test
+    public void testShortMsg(){
 
     }
+
 
 
 

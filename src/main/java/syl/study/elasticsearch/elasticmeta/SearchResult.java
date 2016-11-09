@@ -15,6 +15,7 @@ public class SearchResult<T> {
     private Map<String,Map<Object,Long>> aggResult;
 
 
+
     public Integer getSearchCount() {
         return searchCount;
     }
