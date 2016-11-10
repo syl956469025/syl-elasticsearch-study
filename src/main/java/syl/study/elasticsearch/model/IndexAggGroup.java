@@ -11,14 +11,14 @@ import java.util.Set;
 /**
  * Created by Mtime on 2016/11/3.
  */
-public class IndexAgg {
+public class IndexAggGroup {
 
 
     /**
      * 聚合字段
      * 不包含范围聚合字段
      */
-    private Set<String> aggregation;
+    private Set<String> faectField;
 
     /**
      * 聚合条件
@@ -31,7 +31,7 @@ public class IndexAgg {
      *     key:field
      *     value: 范围是 [ from TO to }  前 闭 后 开
      */
-    private Map<String,RangeAgg<Number>[]> rangeAgg;
+    private Map<String,RangeAgg<Number>[]> numRangeAgg;
 
     /**
      * 日期范围聚合
@@ -45,15 +45,15 @@ public class IndexAgg {
      * 对某个字段 执行聚合函数
      * 包括 ：求和  求最大值   求最小值  求平均值  求数量
      */
-    private Map<String,Func[]> funcAgg;
+    private Map<String,Func[]> groupAgg;
 
 
-    public IndexAgg() {
+    public IndexAggGroup() {
         this.aggQuery = new HashMap<>();
-        this.aggregation = new HashSet<>();
-        this.rangeAgg = new HashMap<>();
+        this.faectField = new HashSet<>();
+        this.numRangeAgg = new HashMap<>();
         this.dateRangeAgg = new HashMap<>();
-        this.funcAgg = new HashMap<>();
+        this.groupAgg = new HashMap<>();
     }
 
 
@@ -61,18 +61,18 @@ public class IndexAgg {
         if (StringUtils.isEmpty(fieldName)){
             throw new RuntimeException("需要聚合的字段不可以为空");
         }
-        this.aggregation.add(fieldName);
+        this.faectField.add(fieldName);
     }
 
-    public void addAggQuery(String fieldName, String ... fieldValues){
-        if (StringUtils.isEmpty(fieldName)){
-            throw new RuntimeException("需要聚合的字段不可以为空");
-        }
-        if (StringUtils.isEmpty(fieldValues)){
-            throw new RuntimeException("需要聚合的字段值不可以为空");
-        }
-        this.aggQuery.put(fieldName, fieldValues);
-    }
+//    public void addAggQuery(String fieldName, String ... fieldValues){
+//        if (StringUtils.isEmpty(fieldName)){
+//            throw new RuntimeException("需要聚合的字段不可以为空");
+//        }
+//        if (StringUtils.isEmpty(fieldValues)){
+//            throw new RuntimeException("需要聚合的字段值不可以为空");
+//        }
+//        this.aggQuery.put(fieldName, fieldValues);
+//    }
 
     public void addFuncAgg(String fieldName , Func ... func){
         if (StringUtils.isEmpty(fieldName)){
@@ -81,7 +81,10 @@ public class IndexAgg {
         if (func == null){
             throw new RuntimeException("需要聚合的函数不可以为空");
         }
-        this.funcAgg.put(fieldName,func);
+        for (Func f : func) {
+            this.groupAgg.put(fieldName+f.name(),func);
+        }
+
     }
 
     /**
@@ -90,15 +93,15 @@ public class IndexAgg {
      *     key:field
      *     value: 范围是 [ from TO to }  前 闭 后 开
      */
-    public void addRangeAgg(String fieldName , Number start , Number end){
-        if (StringUtils.isEmpty(fieldName)){
-            throw new RuntimeException("需要聚合的字段不可以为空");
-        }
-        if (start == null && end == null){
-            throw new RuntimeException("数值范围 开始 和 结束 不可以同时为空");
-        }
-        this.rangeAgg.put(fieldName,new RangeAgg[]{new RangeAgg(start,end)});
-    }
+//    public void addRangeAgg(String fieldName , Number start , Number end,String key){
+//        if (StringUtils.isEmpty(fieldName)){
+//            throw new RuntimeException("需要聚合的字段不可以为空");
+//        }
+//        if (start == null && end == null){
+//            throw new RuntimeException("数值范围 开始 和 结束 不可以同时为空");
+//        }
+//        this.numRangeAgg.put(fieldName,new RangeAgg[]{new RangeAgg(start,end,key)});
+//    }
 
     /**
      * 日期范围聚合
@@ -106,75 +109,68 @@ public class IndexAgg {
      *     key:field
      *     value: 范围是 [ from TO to }  前 闭 后 开
      */
-    public void addDateRangeAgg(String fieldName , Temporal start , Temporal end){
-        if (StringUtils.isEmpty(fieldName)){
-            throw new RuntimeException("需要聚合的字段不可以为空");
-        }
-        if (start == null && end == null){
-            throw new RuntimeException("时间范围 开始 和 结束 不可以同时为空");
-        }
-        this.dateRangeAgg.put(fieldName,new RangeAgg[]{new RangeAgg(start,end)});
+//    public void addDateRangeAgg(String fieldName , Temporal start , Temporal end , String key){
+//        if (StringUtils.isEmpty(fieldName)){
+//            throw new RuntimeException("需要聚合的字段不可以为空");
+//        }
+//        if (start == null && end == null){
+//            throw new RuntimeException("时间范围 开始 和 结束 不可以同时为空");
+//        }
+//        this.dateRangeAgg.put(fieldName,new RangeAgg[]{new RangeAgg(start,end , key)});
+//    }
+
+
+
+
+
+
+
+
+    public Set<String> getFaectField() {
+        return faectField;
     }
 
-
-
-
-
-
-
-
-    public Set<String> getAggregation() {
-        return aggregation;
-    }
-
-    public void setAggregation(Set<String> aggregation) {
-        this.aggregation = aggregation;
+    public void setFaectField(Set<String> faectField) {
+        this.faectField = faectField;
     }
 
     public Map<String, String[]> getAggQuery() {
         return aggQuery;
     }
 
-    public void setAggQuery(Map<String, String[]> aggQuery) {
-        this.aggQuery = aggQuery;
+
+    public Map<String, RangeAgg<Number>[]> getNumRangeAgg() {
+        return numRangeAgg;
     }
 
-    public Map<String, RangeAgg<Number>[]> getRangeAgg() {
-        return rangeAgg;
-    }
-
-    public void setRangeAgg(Map<String, RangeAgg<Number>[]> rangeAgg) {
-        this.rangeAgg = rangeAgg;
-    }
 
     public Map<String, RangeAgg<Temporal>[]> getDateRangeAgg() {
         return dateRangeAgg;
     }
 
-    public void setDateRangeAgg(Map<String, RangeAgg<Temporal>[]> dateRangeAgg) {
-        this.dateRangeAgg = dateRangeAgg;
+
+    public Map<String, Func[]> getGroupAgg() {
+        return groupAgg;
     }
 
-    public Map<String, Func[]> getFuncAgg() {
-        return funcAgg;
-    }
-
-    public void setFuncAgg(Map<String, Func[]> funcAgg) {
-        this.funcAgg = funcAgg;
+    public void setGroupAgg(Map<String, Func[]> groupAgg) {
+        this.groupAgg = groupAgg;
     }
 
     /**
      * 范围是 [ from TO to }  前 闭 后 开
      */
     public static class RangeAgg<T>{
+        String key;
 
         T start;
         T end;
 
 
-        public RangeAgg(T start, T end) {
+        public RangeAgg(T start, T end , String key) {
             this.start = start;
             this.end = end;
+            this.key = key;
         }
 
         public T getStart() {
@@ -192,6 +188,14 @@ public class IndexAgg {
         public void setEnd(T end) {
             this.end = end;
         }
+
+        public String getKey() {
+            return key;
+        }
+
+        public void setKey(String key) {
+            this.key = key;
+        }
     }
 
 
@@ -203,33 +207,33 @@ public class IndexAgg {
         /**
          * 求最小值
          */
-        MIN,
+        MIN("min"),
 
         /**
          * 求最大值
          */
-        MAX,
+        MAX("max"),
 
         /**
          * 求平均值
          */
-        AVG,
+        AVG("avg"),
 
         /**
          * 求和
          */
-        SUM,
+        SUM("sum"),
 
         /**
          * 求数量
          */
-        COUNT;
+        COUNT("count");
 
+        private String name;
 
-
-
-
-
+        Func(String name) {
+            this.name = name;
+        }
     }
 
 

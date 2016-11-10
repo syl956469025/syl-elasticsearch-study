@@ -47,11 +47,11 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
     public void addIndex() throws UnknownHostException {
         //插入数据到elasticsearch
         Member member = new Member();
-        member.setAge(14);
+        member.setAge(1);
         member.setBirthday(LocalDateTime.now());
-        member.setName("张无忌11");
-        member.setId(2);
-        member.setUserId(123456);
+        member.setName("张无忌");
+        member.setId(1);
+        member.setUserId(123459);
         member.setPrice(12.4);
 //        member.setPric(12.5f);
 //        List<Points> pointses = new ArrayList<>();
@@ -70,7 +70,7 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
 //        member.setArr(arr);
 //        member.setPoints(pointses);
 
-        member.setPrefer(new String[]{"swim","eat","sport"});
+//        member.setPrefer(new String[]{"swim","eat","sport"});
         ESWriteUtil.addIndex(member);
     }
 

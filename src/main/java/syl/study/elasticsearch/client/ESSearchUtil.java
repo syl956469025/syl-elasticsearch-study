@@ -12,22 +12,25 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
+import org.elasticsearch.search.aggregations.bucket.global.GlobalBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.metrics.NumericMetricsAggregation;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.elasticsearch.search.sort.SortOrder;
+import syl.study.elasticsearch.Util.CollectionUtil;
 import syl.study.elasticsearch.Util.Mapper;
 import syl.study.elasticsearch.Util.StrKit;
 import syl.study.elasticsearch.elasticmeta.*;
 import syl.study.elasticsearch.enums.AggType;
 import syl.study.elasticsearch.model.BaseEntity;
+import syl.study.elasticsearch.model.IndexAggGroup;
 import syl.study.utils.FastJsonUtil;
 
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.temporal.Temporal;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -78,6 +81,7 @@ public class ESSearchUtil {
                                                                 Map<String,Map<String,Object>> nestParams,
                                                                 Map<String,String> nestFilterString,
                                                                 IndexAgg indexAgg,
+                                                                IndexAggGroup group,
                                                                 int pageIndex,int pageSize) throws UnknownHostException {
         client = TClient.getClient();
         Mapper.EntityInfo info = Mapper.getEntityInfo(clazz);
@@ -119,18 +123,30 @@ public class ESSearchUtil {
         if (sort !=null && !sort.isEmpty()){
             sort(builder ,sort);
         }
-        AggregationBuilder agg = getAgg(indexAgg);
-        if (agg !=null){
-            builder.addAggregation(agg);
+//        AggregationBuilder agg = getAgg(indexAgg);
+//        if (agg !=null){
+//            builder.addAggregation(agg);
+//        }
+        if (group != null){
+            GlobalBuilder global = processAgg(group);
+            builder.addAggregation(global);
         }
+
         builder.setPostFilter(booleanQueryBuilder);
         SearchResponse response = builder.get();
-        return getResult(clazz,response,indexAgg);
+        return getResult(clazz,response,group);
+    }
+
+
+    public static <T extends BaseEntity> SearchResult<T> query(Class<T> clazz,
+                                                               IndexAggGroup group,
+                                                               int pageIndex,int pageSize) throws UnknownHostException {
+        return query(clazz, null,null,null,null,null,null,group, pageIndex, pageSize);
     }
 
 
 
-    public static AggregationBuilder getAgg(IndexAgg indexAgg){
+    private static AggregationBuilder getAgg(IndexAgg indexAgg){
         return ESAggBuilder.getAggs(indexAgg, null);
     }
 
@@ -188,7 +204,7 @@ public class ESSearchUtil {
                                                               Map<String,Object> params,
                                                               Map<String, SortOrder> sort,
                                                               int pageIndex,int pageSize) throws UnknownHostException {
-        return query(clazz,params,sort,null,null,null,null,pageIndex,pageSize);
+        return query(clazz,params,sort,null,null,null,null,null,pageIndex,pageSize);
     }
 
 
@@ -197,7 +213,7 @@ public class ESSearchUtil {
      * @param response
      * @return
      */
-    public static <T extends BaseEntity> SearchResult<T> getResult(Class<T> clazz, SearchResponse response, IndexAgg indexAgg){
+    public static <T extends BaseEntity> SearchResult<T> getResult(Class<T> clazz, SearchResponse response, IndexAggGroup group){
         SearchResult<T> result = new SearchResult<>();
         //设置查询总条数
         result.setSearchCount(Integer.valueOf(String.valueOf(response.getHits().getTotalHits())));
@@ -210,27 +226,32 @@ public class ESSearchUtil {
         }
         result.setSearchList(searchList);
         //设置aggResult
-        if (indexAgg !=null){
-            result.setAggResult(aggResult(response, indexAgg,clazz));
+        if (group !=null){
+            processAggResult(response,group,result);
         }
 
         return result;
     }
 
 
+
+
+
+
+
     private static <T extends BaseEntity> Map<String,Map<Object,Long>> aggResult(SearchResponse response,IndexAgg indexAgg,Class<T> clazz){
         Aggregation agg = response.getAggregations().get(AggType.GLOBAL.name());
-        AggResult<T> tAggResult = testDemo(indexAgg, clazz, agg);
+        AggResult<T> tAggResult = agg(indexAgg, clazz, agg);
         System.out.println(FastJsonUtil.bean2Json(tAggResult));
         return null;
     }
 
-    private static <T extends BaseEntity> AggResult<T> testDemo(IndexAgg indexAgg, Class<T> clazz, Aggregation agg) {
+    private static <T extends BaseEntity> AggResult<T> agg(IndexAgg indexAgg, Class<T> clazz, Aggregation agg) {
         return getResult(indexAgg, agg, clazz, (result, aggs, type, index) -> {
             if (result == null&& aggs==null && StrKit.isBlank(type) && index == null){
                 return null;
             }
-            testDemo(indexAgg, clazz, agg);
+            agg(indexAgg, clazz, agg);
             return result;
         });
 
@@ -287,4 +308,183 @@ public class ESSearchUtil {
             throw new RuntimeException("不支持该类型的聚合");
         }
     }
+
+
+
+    private static GlobalBuilder processAgg(IndexAggGroup group){
+        GlobalBuilder global = AggregationBuilders.global(AggType.GLOBAL.name());
+        Set<String> fields = group.getFaectField();
+        if (CollectionUtil.notEmpty(fields)){
+            for (String field : fields) {
+                global.subAggregation(
+                        AggregationBuilders.terms(AggType.TERMS.name()+field).field(field)
+                );
+            }
+        }
+        Map<String, IndexAggGroup.Func[]> groupAgg = group.getGroupAgg();
+        if (groupAgg !=null && !groupAgg.isEmpty()){
+            for (Map.Entry<String, IndexAggGroup.Func[]> entry : groupAgg.entrySet()) {
+                String field = entry.getKey();
+                IndexAggGroup.Func[] value = entry.getValue();
+                for (IndexAggGroup.Func func : value) {
+                    addGroup(global, func, field);
+                }
+            }
+        }
+        Map<String, IndexAggGroup.RangeAgg<Number>[]> numRangeAgg = group.getNumRangeAgg();
+        if (numRangeAgg !=null && !numRangeAgg.isEmpty()){
+            for (Map.Entry<String, IndexAggGroup.RangeAgg<Number>[]> entry : numRangeAgg.entrySet()) {
+                String field = entry.getKey();
+                for (IndexAggGroup.RangeAgg<Number> range : entry.getValue()) {
+                    String name = AggType.RANGE.name()+range.getKey() + field;
+                    if (range.getStart()==null){
+                        global.subAggregation(
+                            AggregationBuilders.range(name).addUnboundedTo((double)range.getEnd())
+                        );
+                    }else if (range.getEnd()==null){
+                        global.subAggregation(
+                                AggregationBuilders.range(name).addUnboundedFrom((double)range.getEnd())
+                        );
+                    }else {
+                        global.subAggregation(
+                                AggregationBuilders.range(name).addRange((double)range.getStart(),(double)range.getEnd())
+                        );
+                    }
+
+                }
+            }
+        }
+        Map<String, IndexAggGroup.RangeAgg<Temporal>[]> dateRangeAgg = group.getDateRangeAgg();
+        if (dateRangeAgg != null && !dateRangeAgg.isEmpty() ){
+            for (Map.Entry<String, IndexAggGroup.RangeAgg<Temporal>[]> entry : dateRangeAgg.entrySet()) {
+                String field = entry.getKey();
+                for (IndexAggGroup.RangeAgg<Temporal> range : entry.getValue()) {
+                    if (range.getStart()==null){
+                        global.subAggregation(
+                                AggregationBuilders.dateRange(AggType.DATERANGE.name()+field).addUnboundedTo(range.getEnd())
+                        );
+                    }else if (range.getEnd()==null){
+                        global.subAggregation(
+                                AggregationBuilders.dateRange(AggType.DATERANGE.name()+field).addUnboundedFrom(range.getEnd())
+                        );
+                    }else {
+                        global.subAggregation(
+                                AggregationBuilders.dateRange(AggType.DATERANGE.name()+field).addRange(range.getStart(),range.getEnd())
+                        );
+                    }
+                }
+            }
+        }
+        Map<String, String[]> aggQuery = group.getAggQuery();
+        if (aggQuery !=null && !aggQuery.isEmpty()){
+            String query = operateMap(aggQuery);
+            global.subAggregation(
+                    AggregationBuilders.filter(AggType.FILTER.name()).filter(QueryBuilders.queryStringQuery(query))
+            );
+        }
+        return global;
+    }
+
+
+    private static void processAggResult(SearchResponse response,IndexAggGroup group,SearchResult result){
+        Global global = response.getAggregations().get(AggType.GLOBAL.name());
+
+        Set<String> fields = group.getFaectField();
+        if (CollectionUtil.notEmpty(fields)){
+            Map<String,Map<Object,Long>> aggResult = new HashMap<>();
+            for (String field : fields) {
+                Terms faect = global.getAggregations().get(AggType.TERMS.name() + field);
+                Map<Object,Long> m = new HashMap<>();
+                for (Terms.Bucket bucket : faect.getBuckets()) {
+                    m.put(bucket.getKey(),bucket.getDocCount());
+                }
+                aggResult.put(field,m);
+            }
+            result.setAggResult(aggResult);
+        }
+        Map<String, IndexAggGroup.Func[]> groupAgg = group.getGroupAgg();
+        if (groupAgg !=null && !groupAgg.isEmpty()){
+            Map<String,Map<IndexAggGroup.Func,Object>> aggGroup = new HashMap<>();
+            for (Map.Entry<String, IndexAggGroup.Func[]> entry : groupAgg.entrySet()) {
+                String field = entry.getKey();
+                IndexAggGroup.Func[] value = entry.getValue();
+                Map<IndexAggGroup.Func,Object> m = new HashMap<>();
+                for (IndexAggGroup.Func func : value) {
+                    NumericMetricsAggregation.SingleValue groupValue = global.getAggregations()
+                            .get(func.name()+field.replace(func.name(),""));
+                    m.put(func,groupValue.value());
+                }
+                aggGroup.put(field,m);
+            }
+            result.setAggGroup(aggGroup);
+        }
+
+
+
+
+    }
+
+
+    private static String operateMap(Map<String, String[]> query) {
+        StringBuilder buf = new StringBuilder();
+        int j = 0;
+        for (Iterator<Map.Entry<String, String[]>> it = query.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<String, String[]> entry = it.next();
+            if (j > 0) {
+                buf.append(" AND ");
+            }
+            int i = 0;
+            String[] vals = entry.getValue();
+            boolean isArray = (vals != null && vals.length > 1);
+            if (isArray) {
+                buf.append(" ( ");
+            }
+            if (vals != null) {
+                for (String val : vals) {
+                    if (i > 0) {
+                        buf.append(" OR ");
+                    }
+                    buf.append(entry.getKey() + ":" + val);
+                    i++;
+                }
+            }
+            if (isArray) {
+                buf.append(" ) ");
+            }
+            j++;
+        }
+        return buf.toString();
+    }
+
+
+    private static GlobalBuilder addGroup(GlobalBuilder global, IndexAggGroup.Func func,String field){
+        field = field.replace(func.name(),"");
+        if (func.equals(IndexAggGroup.Func.MAX)){
+            global.subAggregation(
+                    AggregationBuilders.max(func.name()+field).field(field)
+            );
+        }else if (func.equals(IndexAggGroup.Func.MIN)){
+            global.subAggregation(
+                    AggregationBuilders.min(func.name()+field).field(field)
+            );
+        }else if (func.equals(IndexAggGroup.Func.SUM)){
+            global.subAggregation(
+                    AggregationBuilders.sum(func.name()+field).field(field)
+            );
+        }else if (func.equals(IndexAggGroup.Func.COUNT)){
+            global.subAggregation(
+                    AggregationBuilders.count(func.name()+field).field(field)
+            );
+        }else if (func.equals(IndexAggGroup.Func.AVG)){
+            global.subAggregation(
+                    AggregationBuilders.avg(func.name()+field).field(field)
+            );
+        }else{
+            throw new RuntimeException("不支持该类型的聚合");
+        }
+        return global;
+
+    }
+
+
 }

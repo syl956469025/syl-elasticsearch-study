@@ -1,5 +1,7 @@
 package syl.study.elasticsearch.elasticmeta;
 
+import syl.study.elasticsearch.model.IndexAggGroup;
+
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +16,36 @@ public class SearchResult<T> {
 
     private Map<String,Map<Object,Long>> aggResult;
 
+    private Map<String,Map<IndexAggGroup.Func,Object>> aggGroup;
 
+//    private Map<String,Map<IndexAggGroup.RangeAgg<Number>,Object>> aggRangeGroup;
+//
+//    private Map<String,Map<IndexAggGroup.RangeAgg<Temporal>,Object>> aggdateGroup;
+
+//
+//    public Map<String, Map<IndexAggGroup.RangeAgg<Number>, Object>> getAggRangeGroup() {
+//        return aggRangeGroup;
+//    }
+//
+//    public void setAggRangeGroup(Map<String, Map<IndexAggGroup.RangeAgg<Number>, Object>> aggRangeGroup) {
+//        this.aggRangeGroup = aggRangeGroup;
+//    }
+//
+//    public Map<String, Map<IndexAggGroup.RangeAgg<Temporal>, Object>> getAggdateGroup() {
+//        return aggdateGroup;
+//    }
+//
+//    public void setAggdateGroup(Map<String, Map<IndexAggGroup.RangeAgg<Temporal>, Object>> aggdateGroup) {
+//        this.aggdateGroup = aggdateGroup;
+//    }
+
+    public Map<String, Map<IndexAggGroup.Func, Object>> getAggGroup() {
+        return aggGroup;
+    }
+
+    public void setAggGroup(Map<String, Map<IndexAggGroup.Func, Object>> aggGroup) {
+        this.aggGroup = aggGroup;
+    }
 
     public Integer getSearchCount() {
         return searchCount;

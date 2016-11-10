@@ -383,7 +383,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
                 .subIndexAgg(IndexAggBuilder.terms("nameEN")
                         .subIndexAgg(IndexAggBuilder.top()));
 
-        SearchResult<Member> result = ESSearchUtil.query(Member.class, null, null, null, null, null, indexAgg, 1, 30);
+        SearchResult<Member> result = ESSearchUtil.query(Member.class, null, null, null, null, null, indexAgg,null, 1, 30);
     }
 
     @Test

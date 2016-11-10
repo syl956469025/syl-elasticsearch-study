@@ -8,7 +8,13 @@ public enum AggType {
 
     TERMS("terms"),
 
-    TOP("top");
+    TOP("top"),
+
+    RANGE("range"),
+
+    DATERANGE("daterange"),
+
+    FILTER("filter");
 
 
     private String name;

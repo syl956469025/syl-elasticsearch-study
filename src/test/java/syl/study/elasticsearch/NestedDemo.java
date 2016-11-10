@@ -55,7 +55,7 @@ public class NestedDemo extends BaseElasticSearchTest {
 
 //        String query = "kequn:aa AND -kequn:cc";
 
-        SearchResult<User> result = ESSearchUtil.query(User.class, null, null, null, null, nest, null, 1, 4);
+        SearchResult<User> result = ESSearchUtil.query(User.class, null, null, null, null, nest, null,null, 1, 4);
         List<User> users = result.getSearchList();
         if (users != null && !users.isEmpty()){
             for (User u : users) {
