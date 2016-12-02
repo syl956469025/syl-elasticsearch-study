@@ -2,7 +2,6 @@ package syl.study.elasticsearch;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.search.SearchHit;
 import org.junit.Test;
 
 /**
@@ -15,19 +14,26 @@ public class ElasticScrollDemo extends BaseElasticSearchTest {
     public void testScroll(){
         SearchResponse response =  client.prepareSearch("sgovregion")
                 .setTypes("sgovregion")
-                .setScroll(new TimeValue(10000))
+                .setScroll(new TimeValue(600000))
                 .setSize(100)
                 .get();
 
-        String scrollId = response.getScrollId();
+        String oldid = response.getScrollId();
+        String newId="";
         SearchResponse res;
         do {
-                res = client.prepareSearchScroll(scrollId).setScroll(new TimeValue(10000)).get();
-                SearchHit[] hit = res.getHits().getHits();
-                for (SearchHit h : hit) {
-                    System.out.println(h.getSourceAsString());
+                res = client.prepareSearchScroll(oldid).setScroll(new TimeValue(600000)).get();
+            newId = res.getScrollId();
+            if (oldid.equals(newId)){
+                System.out.println("两次的id是一样的");
+                try {
+                    Thread.currentThread().sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                System.out.println(Thread.currentThread().getName());
+            }else{
+                System.out.println("两次的id是不一样的");
+            }
 
         }while (res.getHits().getHits().length!=0);
 

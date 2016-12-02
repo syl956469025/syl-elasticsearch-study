@@ -2,6 +2,7 @@ package syl.study.elasticsearch;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -85,8 +86,32 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
 
     @Test
     public void testTerm(){
-
-
+        TermsBuilder field = AggregationBuilders.terms("term").field("channelExtId");
+        TermsBuilder field2 = AggregationBuilders.terms("term2").field("registCinemaId");
+        BoolQueryBuilder must = QueryBuilders.boolQuery().must(
+                QueryBuilders.queryStringQuery("operatorId:1072")
+        );
+        SearchResponse response = client.prepareSearch("membercore")
+                .setTypes("membercore")
+                .setQuery(must)
+//                .setPostFilter(must)
+                .addAggregation(field)
+                .addAggregation(field2)
+                .get();
+        long count = response.getHits().getTotalHits();
+        System.out.println("totalCount : "+count);
+        Terms term = response.getAggregations().get("term");
+        for (Terms.Bucket bucket : term.getBuckets()) {
+            Object key = bucket.getKey();
+            long c = bucket.getDocCount();
+            System.out.println("key : " + key   + " count: "+ c);
+        }
+        Terms term2 = response.getAggregations().get("term2");
+        for (Terms.Bucket bucket : term2.getBuckets()) {
+            Object key = bucket.getKey();
+            long c = bucket.getDocCount();
+            System.out.println("key : " + key   + " count: "+ c);
+        }
     }
 
 

@@ -18,6 +18,14 @@ public class ElasticUpdateByQueryDemo extends BaseElasticSearchTest {
 
 
 
+    @Test
+    public void updateCinema(){
+//        client.prepareBulk().
+
+    }
+
+
+
 
 
 

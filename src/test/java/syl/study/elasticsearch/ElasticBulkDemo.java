@@ -4,6 +4,9 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
@@ -65,6 +68,15 @@ public class ElasticBulkDemo extends BaseElasticSearchTest{
                 String errmsg = res.getFailureMessage();
                 System.out.println(errmsg);
             });
+        }
+
+        SearchResponse res = client.prepareSearch("productor").setTypes("product")
+                .setQuery(QueryBuilders.queryStringQuery("username:*张无忌*"))
+                .get();
+        long count = res.getHits().getTotalHits();
+        System.out.println("totalCount: "+count);
+        for (SearchHit hit : res.getHits().hits()) {
+            System.out.println(hit.getSourceAsString());
         }
 
     }
