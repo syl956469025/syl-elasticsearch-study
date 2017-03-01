@@ -68,7 +68,7 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
     public QueryBuilder nestedQuery(){
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
 //                .must(QueryBuilders.matchQuery("kequns.id", "a"))
-            .mustNot(QueryBuilders.matchQuery("kequns.id", "b"));
+            .mustNot(QueryBuilders.matchQuery("kequns.id", "1"));
 
         return QueryBuilders.nestedQuery("kequns",boolQuery);
     }
@@ -182,6 +182,23 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
                 .setFetchSource("id", "kequn")
                 .get();
         writeSearchResponse(response);
+    }
+
+
+    @Test
+    public void testNestQuery(){
+        SearchResponse response = client.prepareSearch("esinfo")
+                .setTypes("esinfo")
+                .setQuery(nestedQuerys())
+                .get();
+        writeSearchResponse(response);
+    }
+
+    private QueryBuilder nestedQuerys(){
+        BoolQueryBuilder bool = QueryBuilders.boolQuery();
+        bool.must(QueryBuilders.termQuery("id",45));
+        bool.must(QueryBuilders.nestedQuery("scope",QueryBuilders.matchQuery("scope.id",171)));
+        return bool;
     }
 
 }

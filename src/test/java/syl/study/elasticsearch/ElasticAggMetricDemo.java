@@ -134,6 +134,24 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
         System.out.println(FastJsonUtil.bean2Json(agg));
     }
 
+    /**
+     * 查询符合条件的的数量
+     */
+    @Test
+    public void countMemberAgg(){
+        ValueCountBuilder count = AggregationBuilders.count("agg").field("mobile");
+        SearchResponse response = client.prepareSearch("membercore")
+                .setTypes("membercore")
+//                .setSearchType(SearchType.QUERY_AND_FETCH)
+//                .setQuery(QueryBuilders.queryStringQuery("-id:221773"))
+                .addAggregation(count)
+                .get();
+        writeSearchResponse(response);
+        ValueCount agg = response.getAggregations().get("agg");
+        System.out.println(agg.getValue());
+        System.out.println(FastJsonUtil.bean2Json(agg));
+    }
+
 
     /**
      * 以百分比统计

@@ -51,7 +51,10 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
         GlobalBuilder global = AggregationBuilders.global("global").subAggregation(
                 AggregationBuilders.terms("year").field("year").subAggregation(
                         AggregationBuilders.terms("name").field("nameEN").subAggregation(
+
                                 AggregationBuilders.topHits("top").setSize(Integer.MAX_VALUE)
+                        ).subAggregation(
+                                AggregationBuilders.avg("").field("")
                         )
                 )
         );
@@ -290,6 +293,29 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
                 .order(Terms.Order.term(false));
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
+                .addAggregation(order)
+                .get();
+        writeSearchResponse(response);
+        Terms agg = response.getAggregations().get("agg");
+        agg.getBuckets().forEach(b ->{
+            Object key = b.getKey();
+            long count = b.getDocCount();
+            System.out.println("key: "+key +"  count: "+count);
+        });
+
+    }
+
+    /**
+     * terms 默认有10个buckets
+     * 可以通过order来根据每个bucket中文档的数量 来排序
+     */
+    @Test
+    public void orderMemberAgg(){
+        TermsBuilder order = AggregationBuilders.terms("agg").field("mobile")
+                .order(Terms.Order.term(false));
+
+        SearchResponse response = client.prepareSearch("membercore")
+                .setTypes("membercore")
                 .addAggregation(order)
                 .get();
         writeSearchResponse(response);
