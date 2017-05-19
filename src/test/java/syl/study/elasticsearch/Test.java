@@ -1,8 +1,12 @@
 package syl.study.elasticsearch;
 
+import org.junit.Test;
+import syl.study.elasticsearch.aggs.TypeRef;
+import syl.study.elasticsearch.aggs.User;
+import syl.study.elasticsearch.aggs.Utils;
+
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.StringTokenizer;
+import java.time.LocalDate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,6 +54,20 @@ public class test {
         }
 
         //System.in.read();
+    }
+
+
+
+    @Test
+    public void testJson(){
+        User u = new User();
+        u.setZhangsan("zhangsan");
+        u.setBirthday(LocalDate.now().atStartOfDay());
+        String s = Utils.toJson(u);
+        System.out.println(s);
+        User user = Utils.parseObject(s, new TypeRef<User>() {
+        });
+        System.out.println(user.getZhangsan());
     }
 
 }

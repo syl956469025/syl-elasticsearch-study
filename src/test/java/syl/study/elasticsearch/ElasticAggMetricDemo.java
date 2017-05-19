@@ -160,12 +160,13 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void percentAgg(){
-        PercentilesBuilder percent = AggregationBuilders.percentiles("agg").field("id").percentiles(5.0,99);
-        SearchResponse response = client.prepareSearch("smovie")
-                .setTypes("smovie")
+        PercentilesBuilder percent = AggregationBuilders.percentiles("agg").field("price");
+        SearchResponse response = client.prepareSearch("cars")
+                .setTypes("transactions")
                 .setSearchType(SearchType.QUERY_AND_FETCH)
 //                .setQuery(QueryBuilders.queryStringQuery(""))
                 .addAggregation(percent)
+                .setSize(0)
                 .get();
         writeSearchResponse(response);
 

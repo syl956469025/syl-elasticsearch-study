@@ -5,12 +5,16 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.script.Script;
+import org.elasticsearch.script.ScriptService;
 import org.junit.Test;
 import syl.study.elasticsearch.client.ESSearchUtil;
 import syl.study.elasticsearch.elasticmeta.SearchResult;
 import syl.study.elasticsearch.model.User;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Mtime on 2016/10/13.
@@ -200,5 +204,22 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
         bool.must(QueryBuilders.nestedQuery("scope",QueryBuilders.matchQuery("scope.id",171)));
         return bool;
     }
+
+    @Test
+    public void testSearch(){
+        Map<String,Object> param = new HashMap<>();
+//        param.put("prefers",new String[]{"ctx._source.reexchangeCinemaCode"});
+        param.put("prefers",123);
+        SearchResponse response = client.prepareSearch("voucherandsellorderines")
+                .setTypes("voucherandsellorderines")
+
+                .setPostFilter(QueryBuilders.queryStringQuery("voucherState:5"))
+                .setQuery(QueryBuilders.scriptQuery(
+                        new Script("doc['cinemaInnerCode'].value == doc['reexchangeCinemaCode'].value", ScriptService.ScriptType.INLINE,"groovy",null)))
+                .get();
+        writeSearchResponse(response);
+    }
+
+
 
 }

@@ -13,6 +13,7 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.mapper.StrictDynamicMappingException;
 import syl.study.elasticsearch.Util.Mapper;
@@ -292,8 +293,15 @@ public class ESWriteUtil {
     private static void addCore(Mapper.EntityInfo info) throws UnknownHostException {
         client = TClient.getClient();
         ElasticIndex index = info.getIndex();
-        CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(index.getIndexName()).
-                addMapping(index.getIndexType(), FastJsonUtil.bean2Json(info.getMappings()));
+        Settings settings = Settings.settingsBuilder()
+                .put("number_of_shards",3)
+                .put("number_of_replicas",1)
+                .put("max_result_window",12223)
+                .build();
+        CreateIndexRequestBuilder builder = client.admin().indices()
+                .prepareCreate(index.getIndexName())
+                .setSettings(settings)
+                .addMapping(index.getIndexType(), FastJsonUtil.bean2Json(info.getMappings()));
 //        if (info.getAlias()!=null){
 //            builder.addAlias(info.getAlias());
 //        }
