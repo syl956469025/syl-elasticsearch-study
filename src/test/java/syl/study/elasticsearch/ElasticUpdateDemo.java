@@ -1,22 +1,102 @@
 package syl.study.elasticsearch;
 
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptService;
 import org.junit.Test;
+import syl.study.elasticsearch.aggs.MemberIndex;
 import syl.study.utils.FastJsonUtil;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by Mtime on 2016/10/13.
  */
 public class ElasticUpdateDemo extends BaseElasticSearchTest{
+
+
+
+    @Test
+    public void testCPU() throws InterruptedException {
+        /*while (true){
+        try {*/
+        ExecutorService threadPool = Executors.newFixedThreadPool(20);
+
+        for(int j = 0;j<100000000;j++){
+            threadPool.execute(new Task(j+""));
+        }
+
+        Thread.sleep(100000000000L);
+
+
+        /*} catch (Exception e) {
+            e.printStackTrace();
+        }
+        }*/
+    }
+
+    class Task extends Thread{
+        String threadName;
+
+
+        public Task(String threadName){
+            this.threadName = threadName;
+        }
+
+
+        public void run(){
+            List<MemberIndex> list = new ArrayList<>();
+            BulkRequestBuilder builder = client.prepareBulk();
+            IndexRequestBuilder indexBuilder1 = client.prepareIndex("memberindex", "memberindex");
+            for (int i = 0; i < 4000; i++) {
+                MemberIndex member = new MemberIndex();
+                member.setId(i+"_"+threadName+"1");
+                member.setBirthday(LocalDate.now());
+                member.setMobile("18310667310");
+                member.setUpdateTime(LocalDateTime.now());
+                member.setIsSyncToOld(1);
+                member.setId(UUID.randomUUID().toString());
+                member.setMobile("sdfsdfsdf");
+                member.setAddress1("zhangsaosidazhanglai");
+                member.setAddress2("sdfsdfsdf");
+                member.setAddress3("sdfsdfsdfs");
+                member.setAddress4("sdfsdfsdfsfs");
+                member.setArrivalType(1);
+                member.setZipCode("sdfsdf");
+                member.setCardCount(10);
+                member.setUserName("张三李四王五赵六");
+                member.setTcPassword(UUID.randomUUID().toString());
+                member.setRegistCinemaId("000");
+                member.setRegistType(3);
+                member.setWeibo("weibo");
+                member.setRecruitEmployeeNo("123");
+                member.setRecruitEmployeeName("zhangwi0");
+                member.setQq("5664466665");
+                member.setPoints(99666);
+                member.setOperatorName("zhangslaisfoekluoi");
+                member.setPhone("123123123");
+                member.setOldMemberId(987456L);
+                member.setOftenCode("213234");
+                member.setOccupation(5);
+                member.setStatus(5);
+                member.setMemberNo(UUID.randomUUID().toString());
+                member.setCards(new String[]{UUID.randomUUID().toString(),UUID.randomUUID().toString()});
+                list.add(member);
+            }
+
+
+        }
+    }
+
 
 
 

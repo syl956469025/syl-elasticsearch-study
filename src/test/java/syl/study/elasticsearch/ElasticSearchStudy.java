@@ -21,4 +21,9 @@ public class ElasticSearchStudy extends BaseElasticSearchTest {
 
     }
 
+    @Test
+    public void testStore(){
+
+    }
+
 }
