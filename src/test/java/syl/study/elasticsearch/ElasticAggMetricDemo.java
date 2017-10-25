@@ -6,23 +6,25 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.metrics.MetricsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.avg.Avg;
-import org.elasticsearch.search.aggregations.metrics.avg.AvgBuilder;
+import org.elasticsearch.search.aggregations.metrics.avg.AvgAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.cardinality.Cardinality;
-import org.elasticsearch.search.aggregations.metrics.cardinality.CardinalityBuilder;
+import org.elasticsearch.search.aggregations.metrics.cardinality.CardinalityAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.max.Max;
-import org.elasticsearch.search.aggregations.metrics.max.MaxBuilder;
+import org.elasticsearch.search.aggregations.metrics.max.MaxAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.min.Min;
-import org.elasticsearch.search.aggregations.metrics.percentiles.*;
+import org.elasticsearch.search.aggregations.metrics.min.MinAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.percentiles.Percentile;
+import org.elasticsearch.search.aggregations.metrics.percentiles.Percentiles;
+import org.elasticsearch.search.aggregations.metrics.percentiles.PercentilesAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.stats.Stats;
-import org.elasticsearch.search.aggregations.metrics.stats.StatsBuilder;
+import org.elasticsearch.search.aggregations.metrics.stats.StatsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.sum.Sum;
-import org.elasticsearch.search.aggregations.metrics.sum.SumBuilder;
+import org.elasticsearch.search.aggregations.metrics.sum.SumAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
-import org.elasticsearch.search.aggregations.metrics.tophits.TopHitsBuilder;
+import org.elasticsearch.search.aggregations.metrics.tophits.TopHitsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.valuecount.ValueCount;
-import org.elasticsearch.search.aggregations.metrics.valuecount.ValueCountBuilder;
+import org.elasticsearch.search.aggregations.metrics.valuecount.ValueCountAggregationBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Test;
@@ -41,7 +43,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void minAgg(){
-        MetricsAggregationBuilder min =
+        MinAggregationBuilder min =
                 AggregationBuilders
                         .min("agg")
                         .field("id");
@@ -62,7 +64,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void maxAgg(){
-        MaxBuilder max = AggregationBuilders.max("agg").field("id");
+        MaxAggregationBuilder max = AggregationBuilders.max("agg").field("id");
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
                 .setSearchType(SearchType.QUERY_AND_FETCH)
@@ -83,7 +85,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void sumAgg(){
-        SumBuilder sum = AggregationBuilders.sum("agg").field("id");
+        SumAggregationBuilder sum = AggregationBuilders.sum("agg").field("id");
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
                 .setSearchType(SearchType.QUERY_AND_FETCH)
@@ -102,7 +104,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void avgAgg(){
-        AvgBuilder avg = AggregationBuilders.avg("agg").field("id");
+        AvgAggregationBuilder avg = AggregationBuilders.avg("agg").field("id");
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
                 .setSearchType(SearchType.QUERY_AND_FETCH)
@@ -121,7 +123,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void countAgg(){
-        ValueCountBuilder count = AggregationBuilders.count("agg").field("id");
+        ValueCountAggregationBuilder count = AggregationBuilders.count("agg").field("id");
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
                 .setSearchType(SearchType.QUERY_AND_FETCH)
@@ -139,7 +141,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void countMemberAgg(){
-        ValueCountBuilder count = AggregationBuilders.count("agg").field("mobile");
+        ValueCountAggregationBuilder count = AggregationBuilders.count("agg").field("mobile");
         SearchResponse response = client.prepareSearch("membercore")
                 .setTypes("membercore")
 //                .setSearchType(SearchType.QUERY_AND_FETCH)
@@ -160,7 +162,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void percentAgg(){
-        PercentilesBuilder percent = AggregationBuilders.percentiles("agg").field("price");
+        PercentilesAggregationBuilder percent = AggregationBuilders.percentiles("agg").field("price");
         SearchResponse response = client.prepareSearch("cars")
                 .setTypes("transactions")
                 .setSearchType(SearchType.QUERY_AND_FETCH)
@@ -185,20 +187,22 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void percentRankAgg(){
-        PercentileRanksBuilder rank = AggregationBuilders.percentileRanks("agg").field("id").percentiles(221773, 1112233);
-        SearchResponse response = client.prepareSearch("smovie")
-                .setTypes("smovie")
-                .setSearchType(SearchType.QUERY_AND_FETCH)
-                .addAggregation(rank)
-                .get();
-        writeSearchResponse(response);
-        PercentileRanks agg = response.getAggregations().get("agg");
-        for (Percentile per : agg) {
-            double p = per.getPercent();
-            double value = per.getValue();
-            System.out.println("percent : "+ p);
-            System.out.println("value : "+ value);
-        }
+//        PercentileRanksAggregationBuilder rank =
+//                AggregationBuilders.percentileRanks("agg").field("id")
+//                        .percentiles(221773, 1112233);
+//        SearchResponse response = client.prepareSearch("smovie")
+//                .setTypes("smovie")
+//                .setSearchType(SearchType.QUERY_AND_FETCH)
+//                .addAggregation(rank)
+//                .get();
+//        writeSearchResponse(response);
+//        PercentileRanks agg = response.getAggregations().get("agg");
+//        for (Percentile per : agg) {
+//            double p = per.getPercent();
+//            double value = per.getValue();
+//            System.out.println("percent : "+ p);
+//            System.out.println("value : "+ value);
+//        }
     }
 
 
@@ -207,7 +211,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void cardinalityAgg(){
-        CardinalityBuilder cardinality = AggregationBuilders.cardinality("agg").field("year");
+        CardinalityAggregationBuilder cardinality = AggregationBuilders.cardinality("agg").field("year");
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
                 .setSearchType(SearchType.QUERY_AND_FETCH)
@@ -231,8 +235,8 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
     public void topHitAgg(){
 //        TermsBuilder term = AggregationBuilders.terms("agg").field("year")
 //                .subAggregation(
-        TopHitsBuilder tophit = AggregationBuilders.topHits("top")
-                .addSort(SortBuilders.fieldSort("year").order(SortOrder.DESC));
+        TopHitsAggregationBuilder tophit = AggregationBuilders.topHits("top")
+                .sort(SortBuilders.fieldSort("year").order(SortOrder.DESC));
 //                );
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
@@ -272,7 +276,7 @@ public class ElasticAggMetricDemo extends BaseElasticSearchTest {
      */
     @Test
     public void StatsAgg(){
-        StatsBuilder stats = AggregationBuilders.stats("agg").field("id");
+        StatsAggregationBuilder stats = AggregationBuilders.stats("agg").field("id");
 
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")

@@ -5,7 +5,7 @@ import syl.study.elasticsearch.enums.AggType;
 /**
  * Created by Mtime on 2016/11/8.
  */
-public class TopIndexAgg extends IndexAgg {
+public class TopIndexAgg extends IndexAgg {;
 
 
     public TopIndexAgg(){

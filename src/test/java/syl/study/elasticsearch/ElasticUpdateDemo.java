@@ -3,14 +3,21 @@ package syl.study.elasticsearch;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.script.ScriptType;
 import org.junit.Test;
 import syl.study.elasticsearch.aggs.MemberIndex;
+import syl.study.elasticsearch.aggs.Utils;
+import syl.study.elasticsearch.client.TClient;
+import syl.study.elasticsearch.model.ActivityPointRecord;
+import syl.study.elasticsearch.model.TicketPoint;
 import syl.study.utils.FastJsonUtil;
 
+import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -113,9 +120,9 @@ public class ElasticUpdateDemo extends BaseElasticSearchTest{
     public void updateByScript() throws ExecutionException, InterruptedException {
         UpdateRequest request = new UpdateRequest();
         request.index("customer").type("custom").id("2");
-        Map<String, String> param = new HashMap<>();
+        Map<String, Object> param = new HashMap<>();
         param.put("newName", "zhangsan");
-        request.script(new Script("ctx._source.name=newName", ScriptService.ScriptType.FILE, null, param));
+        request.script(new Script(ScriptType.INLINE,"ctx._source.name=newName","", param));
         UpdateResponse response = client.update(request).get();
         System.out.println(FastJsonUtil.bean2Json(response));
     }
@@ -134,12 +141,34 @@ public class ElasticUpdateDemo extends BaseElasticSearchTest{
     public void updateListFieldByScript() throws ExecutionException, InterruptedException {
         UpdateRequest request = new UpdateRequest();
         request.index("productor").type("product").id("1");
-        Map<String, String> param = new HashMap<>();
+        Map<String, Object> param = new HashMap<>();
         param.put("anotherName", "zhangsan");
 //        request.script(new Script("ctx._source.name += anotherName", ScriptService.ScriptType.INLINE,"groovy",param));
-        request.script(new Script("ctx._source.name -= anotherName", ScriptService.ScriptType.INLINE,"groovy",param));
+        request.script(new Script(ScriptType.INLINE,"ctx._source.name -= anotherName", "groovy",param));
         UpdateResponse response = client.update(request).get();
         System.out.println(FastJsonUtil.bean2Json(response));   
+    }
+
+
+    @Test
+    public void updateListObjectByScript() throws ExecutionException, InterruptedException, UnknownHostException {
+        ActivityPointRecord record = new ActivityPointRecord("C110","001",LocalDate.now());
+        TicketPoint ticketPoint = new TicketPoint();
+        ticketPoint.setPoint(10);
+        ticketPoint.setTicketNo("001_3");
+        record.getTicketPoints().add(ticketPoint);
+        TransportClient client = TClient.getClient();
+        Map<String, Object> param = new HashMap<>();
+        param.put("ticketPoints", FastJsonUtil.bean2Map(ticketPoint));
+        IndexRequest index = new IndexRequest("activitypointrecord","activitypointrecord",record.getId());
+        index.source(Utils.toJson(record));
+        UpdateRequest request = new UpdateRequest("activitypointrecord","activitypointrecord",record.getId());
+        request.script(new Script(ScriptType.INLINE,"ctx._source.ticketPoints += ticketPoints", "groovy", param))
+                .upsert(index)
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+        UpdateResponse response = client.update(request).get();
+        System.out.println(FastJsonUtil.bean2Json(response));
+
     }
 
 
@@ -157,11 +186,11 @@ public class ElasticUpdateDemo extends BaseElasticSearchTest{
         request.index("productor").type("product").id("4");
         Map<String,Object> param = new HashMap<>();
 //        param.put("prefers",new String[]{"swim","eat","run","sing"});
-        request.script(new Script("ctx._source.prefer=prefers", ScriptService.ScriptType.INLINE,"groovy",param));
+        request.script(new Script(ScriptType.INLINE,"ctx._source.prefer=prefers","groovy",param));
         param.put("username","张无忌4");
         param.put("nickname","张无忌4");
-        request.script(new Script("ctx._source.username=username", ScriptService.ScriptType.INLINE,"groovy",param));
-        request.script(new Script("ctx._source.nickname=nickname", ScriptService.ScriptType.INLINE,"groovy",param));
+        request.script(new Script(ScriptType.INLINE,"ctx._source.username=username","groovy",param));
+        request.script(new Script(ScriptType.INLINE,"ctx._source.nickname=nickname","groovy",param));
         UpdateResponse response = client.update(request).get();
         System.out.println(FastJsonUtil.bean2Json(response));
     }
@@ -179,9 +208,9 @@ public class ElasticUpdateDemo extends BaseElasticSearchTest{
     public void addRemoveFieldByScript() throws ExecutionException, InterruptedException {
         UpdateRequest request = new UpdateRequest();
         request.index("productor").type("product").id("1");
-        Map<String,String> param = new HashMap<>();
+        Map<String,Object> param = new HashMap<>();
         param.put("removeField","prefer");
-        request.script(new Script("ctx._source.remove(removeField)", ScriptService.ScriptType.INLINE,"groovy",param));
+        request.script(new Script(ScriptType.INLINE,"ctx._source.remove(removeField)", "groovy",param));
         UpdateResponse response = client.update(request).get();
         System.out.println(FastJsonUtil.bean2Json(response));
     }

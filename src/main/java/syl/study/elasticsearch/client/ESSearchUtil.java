@@ -1,10 +1,10 @@
 package syl.study.elasticsearch.client;
 
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
@@ -14,7 +14,7 @@ import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
-import org.elasticsearch.search.aggregations.bucket.global.GlobalBuilder;
+import org.elasticsearch.search.aggregations.bucket.global.GlobalAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.metrics.NumericMetricsAggregation;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
@@ -88,7 +88,6 @@ public class ESSearchUtil {
         ElasticIndex index = info.getIndex();
         SearchRequestBuilder builder = client.prepareSearch(index.getIndexName())
                 .setTypes(index.getIndexType())
-                .setSearchType(SearchType.QUERY_AND_FETCH)
                 .setFrom((pageIndex - 1) * pageSize)
                 .setSize(pageSize);
 
@@ -107,7 +106,7 @@ public class ESSearchUtil {
             nestParams.entrySet().forEach(nest ->{
                 String query = queryStr(nest.getValue());
                 NestedQueryBuilder nestedQueryBuilder =
-                        QueryBuilders.nestedQuery(nest.getKey(), QueryBuilders.queryStringQuery(query));
+                        QueryBuilders.nestedQuery(nest.getKey(), QueryBuilders.queryStringQuery(query),ScoreMode.None);
                 booleanQueryBuilder.must(nestedQueryBuilder);
             });
         }
@@ -115,7 +114,7 @@ public class ESSearchUtil {
         if (nestFilterString !=null && !nestFilterString.isEmpty()){
             nestFilterString.entrySet().forEach(nest ->{
                 NestedQueryBuilder nestedQueryBuilder =
-                        QueryBuilders.nestedQuery(nest.getKey(), QueryBuilders.queryStringQuery(nest.getValue()));
+                        QueryBuilders.nestedQuery(nest.getKey(), QueryBuilders.queryStringQuery(nest.getValue()),ScoreMode.None);
                 booleanQueryBuilder.must(nestedQueryBuilder);
             });
         }
@@ -128,7 +127,7 @@ public class ESSearchUtil {
 //            builder.addAggregation(agg);
 //        }
         if (group != null){
-            GlobalBuilder global = processAgg(group);
+            GlobalAggregationBuilder global = processAgg(group);
             builder.addAggregation(global);
         }
 
@@ -286,7 +285,7 @@ public class ESSearchUtil {
             return AggResult.aggResult(field,null).addData(field,list);
         }else if (type.equals(AggType.TERMS.name())){
             Terms terms= (Terms)agg;
-            List<Terms.Bucket> buckets = terms.getBuckets();
+            List<? extends Terms.Bucket> buckets = terms.getBuckets();
             Map<Object,Long> countMap = new HashMap<>();
             AggResult aggResult = AggResult.aggResult(null, null);
             for (Terms.Bucket bucket : buckets) {
@@ -311,8 +310,8 @@ public class ESSearchUtil {
 
 
 
-    private static GlobalBuilder processAgg(IndexAggGroup group){
-        GlobalBuilder global = AggregationBuilders.global(AggType.GLOBAL.name());
+    private static GlobalAggregationBuilder processAgg(IndexAggGroup group){
+        GlobalAggregationBuilder global = AggregationBuilders.global(AggType.GLOBAL.name());
         Set<String> fields = group.getFaectField();
         if (CollectionUtil.notEmpty(fields)){
             for (String field : fields) {
@@ -361,15 +360,15 @@ public class ESSearchUtil {
                 for (IndexAggGroup.RangeAgg<Temporal> range : entry.getValue()) {
                     if (range.getStart()==null){
                         global.subAggregation(
-                                AggregationBuilders.dateRange(AggType.DATERANGE.name()+field).addUnboundedTo(range.getEnd())
+                                AggregationBuilders.dateRange(AggType.DATERANGE.name()+field).addUnboundedTo(range.getEnd().toString())
                         );
                     }else if (range.getEnd()==null){
                         global.subAggregation(
-                                AggregationBuilders.dateRange(AggType.DATERANGE.name()+field).addUnboundedFrom(range.getEnd())
+                                AggregationBuilders.dateRange(AggType.DATERANGE.name()+field).addUnboundedFrom(range.getStart().toString())
                         );
                     }else {
                         global.subAggregation(
-                                AggregationBuilders.dateRange(AggType.DATERANGE.name()+field).addRange(range.getStart(),range.getEnd())
+                                AggregationBuilders.dateRange(AggType.DATERANGE.name() + field).addRange(range.getStart().toString(), range.getEnd().toString())
                         );
                     }
                 }
@@ -379,7 +378,7 @@ public class ESSearchUtil {
         if (aggQuery !=null && !aggQuery.isEmpty()){
             String query = operateMap(aggQuery);
             global.subAggregation(
-                    AggregationBuilders.filter(AggType.FILTER.name()).filter(QueryBuilders.queryStringQuery(query))
+                    AggregationBuilders.filter(AggType.FILTER.name(),QueryBuilders.queryStringQuery(query))
             );
         }
         return global;
@@ -457,7 +456,7 @@ public class ESSearchUtil {
     }
 
 
-    private static GlobalBuilder addGroup(GlobalBuilder global, IndexAggGroup.Func func,String field){
+    private static GlobalAggregationBuilder addGroup(GlobalAggregationBuilder global, IndexAggGroup.Func func,String field){
         field = field.replace(func.name(),"");
         if (func.equals(IndexAggGroup.Func.MAX)){
             global.subAggregation(

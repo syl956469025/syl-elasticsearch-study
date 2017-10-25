@@ -32,7 +32,7 @@ public class ElasticPPT extends BaseElasticSearchTest {
      */
     @Test
     public void addIndex(){
-        Settings set = Settings.settingsBuilder()
+        Settings set = Settings.builder()
                 .put("number_of_shards", 3)
                 .put("number_of_replicas", 1)
                 .build();

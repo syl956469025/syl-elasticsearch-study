@@ -1,12 +1,13 @@
 package syl.study.elasticsearch;
 
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.script.ScriptType;
 import org.junit.Test;
 import syl.study.elasticsearch.client.ESSearchUtil;
 import syl.study.elasticsearch.elasticmeta.SearchResult;
@@ -74,7 +75,7 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
 //                .must(QueryBuilders.matchQuery("kequns.id", "a"))
             .mustNot(QueryBuilders.matchQuery("kequns.id", "1"));
 
-        return QueryBuilders.nestedQuery("kequns",boolQuery);
+        return QueryBuilders.nestedQuery("kequns",boolQuery, ScoreMode.None);
     }
 
     /**
@@ -201,7 +202,7 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
     private QueryBuilder nestedQuerys(){
         BoolQueryBuilder bool = QueryBuilders.boolQuery();
         bool.must(QueryBuilders.termQuery("id",45));
-        bool.must(QueryBuilders.nestedQuery("scope",QueryBuilders.matchQuery("scope.id",171)));
+        bool.must(QueryBuilders.nestedQuery("scope",QueryBuilders.matchQuery("scope.id",171),ScoreMode.None));
         return bool;
     }
 
@@ -215,7 +216,7 @@ public class ElasticSearchDemo extends BaseElasticSearchTest {
 
                 .setPostFilter(QueryBuilders.queryStringQuery("voucherState:5"))
                 .setQuery(QueryBuilders.scriptQuery(
-                        new Script("doc['cinemaInnerCode'].value == doc['reexchangeCinemaCode'].value", ScriptService.ScriptType.INLINE,"groovy",null)))
+                        new Script(ScriptType.INLINE,"doc['cinemaInnerCode'].value == doc['reexchangeCinemaCode'].value", "groovy",null)))
                 .get();
         writeSearchResponse(response);
     }

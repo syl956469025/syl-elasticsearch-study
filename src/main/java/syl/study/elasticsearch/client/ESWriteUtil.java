@@ -14,6 +14,7 @@ import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.mapper.StrictDynamicMappingException;
 import syl.study.elasticsearch.Util.Mapper;
@@ -124,7 +125,7 @@ public class ESWriteUtil {
                     id);
             builder.add(indexBuilder);
         });
-        BulkResponse response = builder.setRefresh(true).get();
+        BulkResponse response = builder.get();
         System.out.println(FastJsonUtil.bean2Json(response));
         processException(response);
     }
@@ -205,7 +206,7 @@ public class ESWriteUtil {
             IndexRequestBuilder indexBuilder = client.prepareIndex(index.getIndexName(),
                     index.getIndexType(),
                     String.valueOf(obj.getId()));
-            indexBuilder.setSource(FastJsonUtil.bean2Json(obj));
+            indexBuilder.setSource(FastJsonUtil.bean2Json(obj),XContentType.JSON);
             builder.add(indexBuilder);
         });
         BulkResponse response = builder.get();
@@ -231,7 +232,7 @@ public class ESWriteUtil {
             UpdateRequestBuilder updateBuilder = client.prepareUpdate(index.getIndexName(),
                     index.getIndexType(),
                     String.valueOf(obj.getId()));
-            updateBuilder.setDoc(FastJsonUtil.bean2Json(obj));
+            updateBuilder.setDoc(FastJsonUtil.bean2Json(obj),XContentType.JSON);
             builder.add(updateBuilder);
         });
         BulkResponse response = builder.get();
@@ -256,7 +257,7 @@ public class ESWriteUtil {
         client = TClient.getClient();
         ElasticIndex index = info.getIndex();
         client.prepareIndex(index.getIndexName(), index.getIndexType(), String.valueOf(t.getId()))
-                .setSource(FastJsonUtil.bean2Json(t)).get();
+                .setSource(FastJsonUtil.bean2Json(t), XContentType.JSON).get();
     }
 
     /**
@@ -276,11 +277,11 @@ public class ESWriteUtil {
         IndexRequest indexRequest = new IndexRequest(index.getIndexName(),
                 index.getIndexType(),
                 String.valueOf(t.getId()))
-                .source(source);
+                .source(source,XContentType.JSON);
         UpdateRequest updateRequest = new UpdateRequest(index.getIndexName(),
                 index.getIndexType(),
                 String.valueOf(t.getId()))
-                .doc(source)
+                .doc(source,XContentType.JSON)
                 .upsert(indexRequest);
         UpdateResponse response = client.update(updateRequest).actionGet();
     }
@@ -293,15 +294,15 @@ public class ESWriteUtil {
     private static void addCore(Mapper.EntityInfo info) throws UnknownHostException {
         client = TClient.getClient();
         ElasticIndex index = info.getIndex();
-        Settings settings = Settings.settingsBuilder()
+        Settings settings = Settings.builder()
                 .put("number_of_shards",3)
                 .put("number_of_replicas",1)
-                .put("max_result_window",12223)
+                .put("max_result_window",20000)
                 .build();
         CreateIndexRequestBuilder builder = client.admin().indices()
                 .prepareCreate(index.getIndexName())
                 .setSettings(settings)
-                .addMapping(index.getIndexType(), FastJsonUtil.bean2Json(info.getMappings()));
+                .addMapping(index.getIndexType(), FastJsonUtil.bean2Json(info.getMappings()),XContentType.JSON);
 //        if (info.getAlias()!=null){
 //            builder.addAlias(info.getAlias());
 //        }
@@ -320,7 +321,7 @@ public class ESWriteUtil {
         req.type(index.getIndexType());
         String mapping = FastJsonUtil.bean2Json(info.getMappings());
         System.out.println(mapping);
-        req.source(mapping);
+        req.source(mapping,XContentType.JSON);
         PutMappingResponse putMappingResponse = client.admin().indices().putMapping(req).actionGet();
     }
 

@@ -1,7 +1,6 @@
 package syl.study.elasticsearch;
 
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -10,18 +9,19 @@ import org.elasticsearch.search.aggregations.bucket.filter.Filter;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.filters.Filters;
 import org.elasticsearch.search.aggregations.bucket.filters.FiltersAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.filters.FiltersAggregator;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
-import org.elasticsearch.search.aggregations.bucket.global.GlobalBuilder;
+import org.elasticsearch.search.aggregations.bucket.global.GlobalAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.missing.Missing;
-import org.elasticsearch.search.aggregations.bucket.missing.MissingBuilder;
+import org.elasticsearch.search.aggregations.bucket.missing.MissingAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
-import org.elasticsearch.search.aggregations.bucket.nested.NestedBuilder;
+import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.nested.ReverseNested;
 import org.elasticsearch.search.aggregations.bucket.range.Range;
-import org.elasticsearch.search.aggregations.bucket.range.RangeBuilder;
-import org.elasticsearch.search.aggregations.bucket.range.date.DateRangeBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.RangeAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.range.date.DateRangeAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.avg.Avg;
 import org.elasticsearch.search.aggregations.metrics.min.Min;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
@@ -48,11 +48,11 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void globalAgg(){
-        GlobalBuilder global = AggregationBuilders.global("global").subAggregation(
+        GlobalAggregationBuilder global = AggregationBuilders.global("global").subAggregation(
                 AggregationBuilders.terms("year").field("year").subAggregation(
                         AggregationBuilders.terms("name").field("nameEN").subAggregation(
 
-                                AggregationBuilders.topHits("top").setSize(Integer.MAX_VALUE)
+                                AggregationBuilders.topHits("top").size(Integer.MAX_VALUE)
                         ).subAggregation(
                                 AggregationBuilders.avg("").field("")
                         )
@@ -67,13 +67,13 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
         Global agg = response.getAggregations().get("global");
         System.out.println(agg.getDocCount());
         Terms year = agg.getAggregations().get("year");
-        List<Terms.Bucket> buckets = year.getBuckets();
+        List<? extends Terms.Bucket> buckets = year.getBuckets();
         buckets.forEach(b ->{
             Object key = b.getKey();
             long docCount = b.getDocCount();
 //            System.out.println("key: "+key +"  count: "+docCount);
             Terms name = b.getAggregations().get("name");
-            List<Terms.Bucket> bb = name.getBuckets();
+            List<? extends Terms.Bucket> bb = name.getBuckets();
             for (Terms.Bucket bucket : bb) {
                 Object k = bucket.getKey();
                 long count = bucket.getDocCount();
@@ -89,8 +89,8 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
 
     @Test
     public void testTerm(){
-        TermsBuilder field = AggregationBuilders.terms("term").field("channelExtId");
-        TermsBuilder field2 = AggregationBuilders.terms("term2").field("registCinemaId");
+        TermsAggregationBuilder field = AggregationBuilders.terms("term").field("channelExtId");
+        TermsAggregationBuilder field2 = AggregationBuilders.terms("term2").field("registCinemaId");
         BoolQueryBuilder must = QueryBuilders.boolQuery().must(
                 QueryBuilders.queryStringQuery("operatorId:1072")
         );
@@ -129,11 +129,9 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void filterAgg(){
-        FilterAggregationBuilder filter = AggregationBuilders.filter("agg")
-                .filter(QueryBuilders.termQuery("year", "2016"));
+        FilterAggregationBuilder filter = AggregationBuilders.filter("agg",QueryBuilders.termQuery("year", "2016"));
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
-                .setSearchType(SearchType.QUERY_AND_FETCH)
                 .addAggregation(filter)
                 .get();
         writeSearchResponse(response);
@@ -149,9 +147,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void filtersAgg(){
-        FiltersAggregationBuilder filters = AggregationBuilders.filters("agg")
-                .filter("2016", QueryBuilders.termQuery("year", "2016"))
-                .filter("2015", QueryBuilders.termQuery("year", "2015"));
+        FiltersAggregationBuilder filters = AggregationBuilders.filters("agg", new FiltersAggregator.KeyedFilter("2016", QueryBuilders.termQuery("year", "2016")),new FiltersAggregator.KeyedFilter("2015", QueryBuilders.termQuery("year", "2015")));
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
                 .addAggregation(filters)
@@ -172,7 +168,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void missingAgg(){
-        MissingBuilder miss = AggregationBuilders.missing("miss").field("year");
+        MissingAggregationBuilder miss = AggregationBuilders.missing("miss").field("year");
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
                 .addAggregation(miss)
@@ -188,7 +184,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void nestedAgg(){
-        NestedBuilder nest = AggregationBuilders.nested("agg").path("points");
+        NestedAggregationBuilder nest = AggregationBuilders.nested("agg","points");
         SearchResponse response = client.prepareSearch("member")
                 .setTypes("member")
                 .addAggregation(nest)
@@ -207,7 +203,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void nestedAgg2(){
-        NestedBuilder nest = AggregationBuilders.nested("agg").path("points");
+        NestedAggregationBuilder nest = AggregationBuilders.nested("agg", "points");
         nest.subAggregation(
             AggregationBuilders.min("min").field("points.level")
         );
@@ -229,7 +225,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void reverseNestedAgg(){
-        NestedBuilder nest = AggregationBuilders.nested("agg").path("points")
+        NestedAggregationBuilder nest = AggregationBuilders.nested("agg","points")
                 .subAggregation(
                         AggregationBuilders.terms("term").field("points.level")
                                 .subAggregation(
@@ -266,7 +262,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void termAgg(){
-        TermsBuilder term = AggregationBuilders.terms("agg").field("areaId").size(100).shardSize(200);
+        TermsAggregationBuilder term = AggregationBuilders.terms("agg").field("areaId").size(100).shardSize(200);
 
         SearchResponse response = client.prepareSearch("ticketorderinfo")
                 .setTypes("ticketorderinfo")
@@ -289,7 +285,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void orderAgg(){
-        TermsBuilder order = AggregationBuilders.terms("agg").field("year")
+        TermsAggregationBuilder order = AggregationBuilders.terms("agg").field("year")
                 .order(Terms.Order.term(false));
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
@@ -311,7 +307,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void orderMemberAgg(){
-        TermsBuilder order = AggregationBuilders.terms("agg").field("mobile")
+        TermsAggregationBuilder order = AggregationBuilders.terms("agg").field("mobile")
                 .order(Terms.Order.term(false));
 
         SearchResponse response = client.prepareSearch("membercore")
@@ -334,7 +330,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void orderSubAgg(){
-        TermsBuilder order = AggregationBuilders.terms("agg").field("year")
+        TermsAggregationBuilder order = AggregationBuilders.terms("agg").field("year")
                 .order(Terms.Order.aggregation("avg", false))
                 .subAggregation(AggregationBuilders.avg("avg").field("id"));
         SearchResponse response = client.prepareSearch("smovie")
@@ -360,7 +356,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void rangeAgg(){
-        RangeBuilder range = AggregationBuilders.range("agg").field("id")
+        RangeAggregationBuilder range = AggregationBuilders.range("agg").field("id")
                 .addRange(27812, 1112233);
         SearchResponse response = client.prepareSearch("smovie")
                 .setTypes("smovie")
@@ -387,7 +383,7 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
      */
     @Test
     public void dateRangeAgg(){
-        DateRangeBuilder dateRange = AggregationBuilders.dateRange("agg").field("releaseDate")
+        DateRangeAggregationBuilder dateRange = AggregationBuilders.dateRange("agg").field("releaseDate")
                 .addRange("2016-09-02", "2016-10-01");
 
         SearchResponse response = client.prepareSearch("smovie")
@@ -407,8 +403,8 @@ public class ElasticAggBucketDemo extends BaseElasticSearchTest {
 
     @Test
     public void testData(){
-        TermsBuilder term = AggregationBuilders.terms("agg").field("cinemaId").subAggregation(
-                AggregationBuilders.topHits("top").setSize(1).setTrackScores(true)
+        TermsAggregationBuilder term = AggregationBuilders.terms("agg").field("cinemaId").subAggregation(
+                AggregationBuilders.topHits("top").size(1)
         );
         SearchResponse response = client.prepareSearch("kequn")
                 .setTypes("kequn")

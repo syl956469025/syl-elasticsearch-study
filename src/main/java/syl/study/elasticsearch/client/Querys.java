@@ -1,5 +1,6 @@
 package syl.study.elasticsearch.client;
 
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -92,7 +93,7 @@ public class Querys {
 
 
 
-        return QueryBuilders.nestedQuery("member",boolQuery);
+        return QueryBuilders.nestedQuery("member",boolQuery, ScoreMode.None);
     }
 
 

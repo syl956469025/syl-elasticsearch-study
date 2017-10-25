@@ -4,7 +4,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.global.Global;
-import org.elasticsearch.search.aggregations.bucket.global.GlobalBuilder;
+import org.elasticsearch.search.aggregations.bucket.global.GlobalAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.metrics.tophits.TopHits;
 import org.junit.Test;
@@ -24,7 +24,7 @@ public class ElasticFacetDemo extends BaseElasticSearchTest{
 
     @Test
     public void facetTest(){
-        GlobalBuilder global = AggregationBuilders.global("sregion").subAggregation(
+        GlobalAggregationBuilder global = AggregationBuilders.global("sregion").subAggregation(
                 AggregationBuilders.terms("term").field("name").subAggregation(
                         AggregationBuilders.topHits("top")
                 )
