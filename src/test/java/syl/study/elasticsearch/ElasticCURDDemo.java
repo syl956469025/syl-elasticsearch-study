@@ -50,27 +50,27 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
         member.setAge(1);
         member.setBirthday(LocalDateTime.now());
         member.setName("张无忌");
-        member.setId(1);
+        member.setId(2);
         member.setUserId(123459);
         member.setPrice(12.4);
-//        member.setPric(12.5f);
-//        List<Points> pointses = new ArrayList<>();
-//        for (int i=0;i<5;i++){
-//            Points p = new Points();
-//            p.setCards(new String[]{"1234","3456","234567"});
-//            p.setLevel(1+i+1);
-//            p.setPoint(2);
-//            p.setUserId(12356);
-//            pointses.add(p);
-//        }
+        member.setPric(12.5f);
+        List<Points> pointses = new ArrayList<>();
+        for (int i=0;i<5;i++){
+            Points p = new Points();
+            p.setCards(new String[]{"1234","3456","234567"});
+            p.setLevel(1+i+1);
+            p.setPoint(2);
+            p.setUserId(12356);
+            pointses.add(p);
+        }
 
-//        ArrTest arr = new ArrTest();
-//        arr.setPrefer(new String[]{"swim","eat"});
-//        arr.setZhangsan("iszhangsan");
-//        member.setArr(arr);
-//        member.setPoints(pointses);
+        ArrTest arr = new ArrTest();
+        arr.setPrefer(new String[]{"swim","eat"});
+        arr.setZhangsan("iszhangsan");
+        member.setArr(arr);
+        member.setPoints(pointses);
 
-//        member.setPrefer(new String[]{"swim","eat","sport"});
+        member.setPrefer(new String[]{"swim","eat","sport"});
         ESWriteUtil.addIndex(member);
     }
 
@@ -81,9 +81,9 @@ public class ElasticCURDDemo extends BaseElasticSearchTest {
      */
     @Test
     public void getIndex() throws UnknownHostException {
-        TermQueryBuilder query = QueryBuilders.termQuery("name", "1");
-        SearchResponse response = client.prepareSearch("customer")
-                .setTypes("custom")
+        TermQueryBuilder query = QueryBuilders.termQuery("id", "1");
+        SearchResponse response = client.prepareSearch("member")
+                .setTypes("member")
                 .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
                 .setQuery(query)
                 .execute().actionGet();
