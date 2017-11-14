@@ -22,5 +22,12 @@ public class ESRestClient {
         return new RestHighLevelClient(restClient);
     }
 
+    public static RestClient getLowClient(){
+        return RestClient.builder(
+                new HttpHost("192.168.55.139", 9200, "http"),
+                new HttpHost("192.168.55.140", 9200, "http"),
+                new HttpHost("192.168.55.141", 9200, "http")).build();
+    }
+
 
 }

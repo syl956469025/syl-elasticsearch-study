@@ -1,5 +1,8 @@
 package syl.study.elasticsearch.eshttp;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -14,21 +17,22 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.junit.Test;
+import syl.study.elasticsearch.Util.Mapper;
+import syl.study.elasticsearch.aggs.Utils;
+import syl.study.elasticsearch.elasticmeta.ElasticIndex;
 import syl.study.elasticsearch.model.Member;
 import syl.study.elasticsearch.model.Points;
 import syl.study.utils.FastJsonUtil;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 增删改查 实例
@@ -46,7 +50,7 @@ public class ESHttpCURDDemo {
      */
     @Test
     public void testAddDoc() throws IOException, InterruptedException {
-        IndexRequest request = new IndexRequest("member","member","3");
+        IndexRequest request = new IndexRequest("members","members","3");
         Member member = new Member();
         member.setId(3);
         member.setAge(3);
@@ -249,6 +253,25 @@ public class ESHttpCURDDemo {
         for (BulkItemResponse item : res.getItems()) {
             System.out.println(FastJsonUtil.bean2Json(item));
         }
+    }
+
+
+    @Test
+    public void addIndex() throws IOException {
+        Mapper.EntityInfo info = Mapper.getEntityInfo(Member.class);
+        ElasticIndex index = info.getIndex();
+        Map<String,Object> settings = new HashMap<>();
+        settings.put("number_of_shards",3);
+        settings.put("number_of_replicas",1);
+        settings.put("max_result_window",20000);
+        System.out.println(Utils.toJson(settings));
+        RestClient client = ESRestClient.getLowClient();
+        HttpEntity entity = new NStringEntity(Utils.toJson(settings), ContentType.APPLICATION_JSON);
+        HttpEntity mapping = new NStringEntity(Utils.toJson(info.getMappings()), ContentType.APPLICATION_JSON);
+        client.performRequest("PUT",index.getIndexName(), Collections.emptyMap(),entity);
+        client.performRequest("POST",index.getIndexName()+"/"+index.getIndexType()+"/_mapping",Collections.emptyMap(),mapping);
+
+
     }
 
 

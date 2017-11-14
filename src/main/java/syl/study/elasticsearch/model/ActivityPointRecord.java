@@ -1,7 +1,7 @@
 package syl.study.elasticsearch.model;
 
 
-import org.apache.commons.lang.StringUtils;
+import syl.study.utils.StringUtils;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

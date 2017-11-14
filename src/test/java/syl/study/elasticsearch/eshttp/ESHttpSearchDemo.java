@@ -109,5 +109,9 @@ public class ESHttpSearchDemo extends ESHttpBase {
         pointSearchResponse(response);
     }
 
+    public void slicedScroll(){
+
+    }
+
 
 }
